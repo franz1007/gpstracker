@@ -1,5 +1,7 @@
 import { Component, AfterViewInit } from '@angular/core';
 import * as L from 'leaflet';
+import { MarkerService } from '../marker.service';
+
 
 @Component({
   selector: 'app-map',
@@ -25,7 +27,7 @@ export class MapComponent implements AfterViewInit {
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
 
-  constructor() { }
+  constructor(private markerService: MarkerService) { }
 
   ngAfterViewInit(): void {
     this.map = L.map('map', {
@@ -33,5 +35,6 @@ export class MapComponent implements AfterViewInit {
       zoom: 3
     });
     this.tiles.addTo(this.map)
+    this.markerService.makeCapitalMarkers(this.map);
   }
 }
