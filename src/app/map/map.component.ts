@@ -14,15 +14,8 @@ import { MarkerService } from '../marker.service';
 export class MapComponent implements AfterViewInit {
   private map!: L.Map;
 
-  private initMap(): void {
-    this.map = L.map('map', {
-      center: [39.8282, -98.5795],
-      zoom: 3
-    });
-  }
-
   private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
+    maxZoom: 20,
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
@@ -31,8 +24,8 @@ export class MapComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.map = L.map('map', {
-      center: [39.8282, -98.5795],
-      zoom: 3
+      center: [49.65254208294224, 10.635266687654777],
+      zoom: 10
     });
     this.tiles.addTo(this.map)
     this.markerService.makeCapitalMarkers(this.map);
