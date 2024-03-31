@@ -1,16 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
+import { environment } from '../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MarkerService {
-  capitals: string = '/gpstracker-backend/points';
+  pointsUrl: string = environment.apiUrl + "/points"
 
   constructor(private http: HttpClient) { }
   makeCapitalMarkers(map: L.Map): void {
-    this.http.get(this.capitals).subscribe((res: any) => {
+    this.http.get(this.pointsUrl).subscribe((res: any) => {
       console.log(res)
       const points = []
       res.sort((a: any, b: any) => {
