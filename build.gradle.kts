@@ -1,8 +1,7 @@
-
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.ktor)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 group = "eu.franz1007"
@@ -19,13 +18,28 @@ repositories {
     mavenCentral()
 }
 
-kotlin{
+kotlin {
     jvmToolchain(21)
+    js{
+        browser()
+    }
+    sourceSets{
+        commonMain{
+
+        }
+        jvmMain{
+
+        }
+        jsMain{
+
+        }
+    }
 }
 
 
 dependencies {
     implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.config.yaml)
     implementation(libs.ktor.server.sessions)
     implementation(libs.ktor.server.auto.head.response)
     implementation(libs.ktor.server.host.common)
@@ -43,10 +57,10 @@ dependencies {
     implementation(libs.h2)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
+    implementation(libs.exposed.datetime)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime-jvm:0.6.1")
-    implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.56.0")
+    implementation(libs.kotlinx.datetime)
 }

@@ -148,6 +148,27 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun readLatest(limit: Int): List<GpsPoint> {
+        return dbQuery {
+            GpsPoints.selectAll().orderBy(GpsPoints.timestamp, SortOrder.ASC).limit(limit).map {
+                GpsPoint(
+                    it[GpsPoints.id],
+                    it[GpsPoints.timestamp],
+                    it[GpsPoints.lat],
+                    it[GpsPoints.lon],
+                    it[GpsPoints.hdop],
+                    it[GpsPoints.altitude],
+                    it[GpsPoints.speed],
+                    it[GpsPoints.bearing],
+                    it[GpsPoints.eta],
+                    it[GpsPoints.etfa],
+                    it[GpsPoints.eda],
+                    it[GpsPoints.edfa]
+                )
+            }
+        }
+    }
+
     private suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
 }
 
