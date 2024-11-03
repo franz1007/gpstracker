@@ -1,5 +1,6 @@
 package eu.franz1007.gpstracker.plugins
 
+import eu.franz1007.gpstracker.model.GpsPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
@@ -8,22 +9,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-
-@Serializable
-data class GpsPoint(
-    val id: Long,
-    val timestamp: Instant,
-    val lat: Double,
-    val lon: Double,
-    val hdop: Double,
-    val altitude: Double,
-    val speed: Double,
-    val bearing: Double,
-    val eta: Instant,
-    val etfa: Instant,
-    val eda: Int,
-    val edfa: Int
-)
 
 @Serializable
 data class GpsPointNoId(
