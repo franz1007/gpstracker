@@ -14,29 +14,31 @@ repositories {
 }
 kotlin {
     jvmToolchain(21)
-    js{
+    js {
         browser()
+        binaries.executable()
     }
-    jvm{
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        mainRun{
+    jvm {
+        @OptIn(ExperimentalKotlinGradlePluginApi::class) mainRun {
             mainClass = "eu.franz1007.gpstracker.ApplicationKt"
             //val isDevelopment: Boolean = project.ext.has("development")
             //applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
             args(listOf("-Dio.ktor.development=true"))
         }
     }
-    sourceSets{
-        commonMain{
+    sourceSets {
+        commonMain {
             dependencies {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.ktor.serialization.kotlinx.json)
             }
         }
-        jsMain{
-
+        jsMain {
+            dependencies {
+                implementation(libs.kotlinx.html)
+            }
         }
-        jvmMain{
+        jvmMain {
             dependencies {
                 implementation(libs.ktor.server.core)
                 implementation(libs.ktor.server.config.yaml)
@@ -63,20 +65,23 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
             }
         }
-        jvmTest{
-            dependencies{
+        jvmTest {
+            dependencies {
                 implementation(libs.ktor.server.test.host)
                 implementation(libs.kotlin.test.junit)
             }
         }
     }
 }
-tasks.named<Test>("jvmTest"){
+tasks.named<Test>("jvmTest") {
     useJUnitPlatform()
     testLogging {
         showExceptions = true
         showStandardStreams = true
-        events = setOf(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED, org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED)
+        events = setOf(
+            org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED,
+            org.gradle.api.tasks.testing.logging.TestLogEvent.PASSED
+        )
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }
