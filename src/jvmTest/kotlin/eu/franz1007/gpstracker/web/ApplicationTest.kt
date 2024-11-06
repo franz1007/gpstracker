@@ -1,4 +1,4 @@
-package eu.franz1007.gpstracker
+package eu.franz1007.gpstracker.web
 
 import eu.franz1007.gpstracker.plugins.configureRouting
 import io.ktor.client.request.*

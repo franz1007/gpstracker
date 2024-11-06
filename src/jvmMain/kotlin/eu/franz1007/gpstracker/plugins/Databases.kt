@@ -7,14 +7,18 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.websocket.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.Database
+import java.lang.Thread.sleep
+import java.util.*
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 fun Application.configureDatabases(config: ApplicationConfig) {
+    val connections = Collections.synchronizedSet<DefaultWebSocketServerSession>(LinkedHashSet())
     val database = Database.connect(
         url = config.property("storage.url").getString(),
         user = config.property("storage.user").getString(),
@@ -75,12 +79,32 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             val edfa = call.parameters["edfa"]?.toInt() ?: throw BadRequestException("Invalid edfa")
             val point = GpsPointNoId(timestamp, lat, lon, hdop, altitude, speed, bearing, eta, etfa, eda, edfa)
             gpsPointService.create(point)
+            connections.forEach {
+                it.sendSerialized(point)
+            }
         }
         route("/api") {
             get("/points") {
                 call.respond(gpsPointService.readAll())
             }
+            webSocket("/ws") {
+                println("Adding user!")
+                connections += this
+                println(connections)
+                try {
+                    for (frame in incoming) {
+                        println(frame)
+                    }
+                } catch (e: Exception) {
+                    println(e.localizedMessage)
+                } finally {
+                    println("Removing $this!")
+                    connections -= this
+                }
+            }
         }
+
+
     }
 
     launch {
@@ -106,5 +130,20 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             )
         gpsPointService.create(pointMunich)
         gpsPointService.create(pointSalzburg)
+        var lat = 47.7994100
+        var lon = 13.0439900
+        repeat(1000) {
+            lat += 0.0001
+            lon += 0.0001
+            val id = gpsPointService.create(pointSalzburg.copy(timestamp = Clock.System.now(), lat = lat, lon = lon))
+            val point = gpsPointService.read(id)
+            connections.forEach{
+                println("sending")
+                it.sendSerialized(point)
+            }
+            println("Loop")
+            sleep(1000)
+        }
     }
+
 }
