@@ -63,6 +63,7 @@ kotlin {
                 implementation(libs.ktor.server.netty)
                 implementation(libs.logback.classic)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.ktor.server.cors)
             }
         }
         jvmTest {
