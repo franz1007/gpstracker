@@ -12,6 +12,8 @@ version = "0.0.1"
 repositories {
     mavenCentral()
 }
+
+
 kotlin {
     jvmToolchain(21)
     js {
@@ -36,6 +38,8 @@ kotlin {
         jsMain {
             dependencies {
                 implementation(libs.kotlinx.html)
+                implementation("io.kvision:kvision-maps:8.0.1")
+
             }
         }
         jvmMain {
