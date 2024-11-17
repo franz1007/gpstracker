@@ -6,7 +6,6 @@ import io.kvision.maps.LeafletObjectFactory
 import io.kvision.maps.externals.leaflet.geo.LatLng
 import kotlinx.browser.document
 import kotlinx.html.div
-import kotlinx.html.dom.append
 import kotlinx.html.dom.create
 import kotlinx.html.id
 import kotlinx.html.style
@@ -14,14 +13,13 @@ import kotlinx.html.style
 fun main() {
     MapsModule.initialize()
     val body = document.body ?: error("No body")
-    body.append {
-        div {
-            id = "testDiv"
-        }
-    }
     val mapDiv = document.create.div {
-        style = "height: 500px; width: 1000px;"
-        id="mapDiv"
+        style = "height: 100%; position: absolute; margin: 0; inset: 0;"
+        div {
+            style = "height: 100%; width: 1000px;"
+            id = "mapDiv"
+        }
+
     }
     body.append(mapDiv)
     val map = LeafletObjectFactory.map(mapDiv)
