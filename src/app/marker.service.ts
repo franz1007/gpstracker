@@ -23,12 +23,11 @@ export class MarkerService {
         }
         return 0;
       })
-      let marker = new L.CircleMarker([0, 0])
       for (const c of res) {
         points.push([c.lat, c.lon])
       }
       for (let i = 0; i < points.length && i < 20; i++) {
-        marker = new L.CircleMarker([points[i][0], points[i][1]])
+        const marker = L.circleMarker([points[i][0], points[i][1]])
         marker.setRadius(20-i)
         marker.addTo(map);
       }
