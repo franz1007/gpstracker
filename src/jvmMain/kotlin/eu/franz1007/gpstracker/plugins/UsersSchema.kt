@@ -8,13 +8,13 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 
 @Serializable
-data class ExposedUser(val name: String, val age: Int)
+data class ExposedUser(val name: String, val hash: String)
 
 class UserService(database: Database) {
     object Users : Table() {
         val id = integer("id").autoIncrement()
         val name = varchar("name", length = 50)
-        val age = integer("age")
+        val hash = text("hash")
 
         override val primaryKey = PrimaryKey(id)
     }
@@ -28,13 +28,14 @@ class UserService(database: Database) {
     suspend fun create(user: ExposedUser): Int = dbQuery {
         Users.insert {
             it[name] = user.name
-            it[age] = user.age
+            it[hash] = user.hash
         }[Users.id]
     }
 
     suspend fun read(id: Int): ExposedUser? {
         return dbQuery {
-            Users.selectAll().where { Users.id eq id }.map { ExposedUser(it[Users.name], it[Users.age]) }.singleOrNull()
+            Users.selectAll().where { Users.id eq id }.map { ExposedUser(it[Users.name], it[Users.hash]) }
+                .singleOrNull()
         }
     }
 
@@ -42,7 +43,7 @@ class UserService(database: Database) {
         dbQuery {
             Users.update({ Users.id eq id }) {
                 it[name] = user.name
-                it[age] = user.age
+                it[hash] = user.hash
             }
         }
     }

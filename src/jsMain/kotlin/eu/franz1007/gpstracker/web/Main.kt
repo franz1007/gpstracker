@@ -1,5 +1,6 @@
 package eu.franz1007.gpstracker.web
 
+import eu.franz1007.gpstracker.model.GpsPoint
 import io.kvision.MapsModule
 import io.kvision.maps.DefaultTileLayers
 import io.kvision.maps.LeafletObjectFactory
@@ -9,6 +10,9 @@ import kotlinx.html.div
 import kotlinx.html.dom.create
 import kotlinx.html.id
 import kotlinx.html.style
+import kotlinx.serialization.json.Json
+import org.w3c.dom.WebSocket
+import org.w3c.xhr.XMLHttpRequest
 
 fun main() {
     MapsModule.initialize()
@@ -24,5 +28,29 @@ fun main() {
     body.append(mapDiv)
     val map = LeafletObjectFactory.map(mapDiv)
     DefaultTileLayers.OpenStreetMap.addTo(map)
-    map.setView(LatLng(51.505, -0.09), 13)
+    val posSalzburg = LatLng(47.7994100, 13.0439900)
+    map.setView(posSalzburg, 13)
+    val line = LeafletObjectFactory.polyline(listOf())
+    line.addTo(map)
+    val req = XMLHttpRequest()
+    req.onload = {
+        println(it)
+        console.log(req)
+    }
+    req.open("GET", "http://localhost:8090/api/points")
+    req.send()
+    val ws = WebSocket("ws://localhost:8090/api/ws")
+    ws.onmessage = {
+        println(it.data)
+        when (val data = it.data) {
+            is String -> {
+                val test: GpsPoint = Json.decodeFromString(data)
+                line.addLatLng(LatLng(test.lat, test.lon))
+            }
+
+            else -> {
+                println("WebSocket message that was not a String")
+            }
+        }
+    }
 }
