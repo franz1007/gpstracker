@@ -22,3 +22,4 @@ fun Application.configureSecurity() {
             }
     }
 }
+

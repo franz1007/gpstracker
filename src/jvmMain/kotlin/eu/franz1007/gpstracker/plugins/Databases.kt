@@ -132,12 +132,12 @@ fun Application.configureDatabases(config: ApplicationConfig) {
         gpsPointService.create(pointSalzburg)
         var lat = 47.7994100
         var lon = 13.0439900
-        repeat(1000) {
-            lat += 0.0001
+        repeat(1000) { repetition ->
+            if ((repetition + 2) % 2 == 0) lat += 0.0001
             lon += 0.0001
             val id = gpsPointService.create(pointSalzburg.copy(timestamp = Clock.System.now(), lat = lat, lon = lon))
             val point = gpsPointService.read(id)
-            connections.forEach{
+            connections.forEach {
                 println("sending")
                 it.sendSerialized(point)
             }
