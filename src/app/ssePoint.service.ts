@@ -17,8 +17,8 @@ export class SsePointService {
             subscriber.next(ev.data)
         }
         eventSource.onerror = ev => {
+            // subscriber.error would lead to not retrying
             console.log(ev)
-            subscriber.error(ev)
         }
         eventSource.onopen = ev => {
             console.log(ev)
