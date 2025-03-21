@@ -28,25 +28,30 @@ export class MapComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.map = L.map('map', {
       center: [49.65254208294224, 10.635266687654777],
-      zoom: 10
+      zoom: 7
     });
     this.tiles.addTo(this.map)
     //this.markerService.makeCapitalMarkers(this.map);
+    this.line = L.polyline([], { color: "red" }).addTo(this.map)
+    this.marker = L.circleMarker(new L.LatLng(1, 1)).addTo(this.map)
     this.markerService.getInitialPoints().then(points => {
-      this.line = L.polyline(points, { color: "red" }).addTo(this.map)
-      const pos = this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng
-      this.marker = L.circleMarker(pos)
-      this.marker.setRadius(20)
-      this.marker.addTo(this.map)
-      this.sseService.createEventSource().subscribe(data => {
-        console.log(data)
-        const obj = JSON.parse(data)
-        console.log(obj.lat)
-        console.log(obj.lon)
-        this.line.addLatLng(new L.LatLng(obj.lat, obj.lon))
-        this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+      points.forEach(point=>{
+        this.line.addLatLng(point)
       })
+      const pos = this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng
+      this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+      this.marker.setRadius(20)
+      
     })
+    this.sseService.createEventSource().subscribe(data => {
+      console.log(data)
+      const obj = JSON.parse(data)
+      console.log(obj.lat)
+      console.log(obj.lon)
+      this.line.addLatLng(new L.LatLng(obj.lat, obj.lon))
+      this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+    })
+      
     
     
   }
