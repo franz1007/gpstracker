@@ -14,6 +14,6 @@ fun Application.module() {
     configureTemplating()
     configureSockets()
     configureSerialization()
-    configureDatabases(environment.config)
     configureRouting()
+    configureDatabases(environment.config)
 }
