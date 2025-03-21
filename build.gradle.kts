@@ -19,6 +19,7 @@ kotlin {
     js {
         browser()
         binaries.executable()
+        generateTypeScriptDefinitions()
     }
     jvm {
         @OptIn(ExperimentalKotlinGradlePluginApi::class) mainRun {
@@ -39,7 +40,6 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinx.html)
                 implementation("io.kvision:kvision-maps:8.0.1")
-
             }
         }
         jvmMain {
@@ -68,6 +68,7 @@ kotlin {
                 implementation(libs.logback.classic)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.ktor.server.cors)
+                implementation(libs.ktor.server.sse)
             }
         }
         jvmTest {

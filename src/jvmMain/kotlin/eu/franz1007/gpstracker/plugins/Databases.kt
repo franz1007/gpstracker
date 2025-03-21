@@ -7,10 +7,18 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
+import io.ktor.sse.*
+import io.ktor.util.collections.*
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.io.IOException
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import java.lang.Thread.sleep
 import java.util.*
@@ -19,6 +27,7 @@ import kotlin.time.toDuration
 
 fun Application.configureDatabases(config: ApplicationConfig) {
     val connections = Collections.synchronizedSet<DefaultWebSocketServerSession>(LinkedHashSet())
+    val sseConnections = ConcurrentSet<ServerSSESession>()
     val database = Database.connect(
         url = config.property("storage.url").getString(),
         user = config.property("storage.user").getString(),
@@ -78,9 +87,13 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             val eda = call.parameters["eda"]?.toInt() ?: throw BadRequestException("Invalid eda")
             val edfa = call.parameters["edfa"]?.toInt() ?: throw BadRequestException("Invalid edfa")
             val point = GpsPointNoId(timestamp, lat, lon, hdop, altitude, speed, bearing, eta, etfa, eda, edfa)
-            gpsPointService.create(point)
+            val id = gpsPointService.create(point)
             connections.forEach {
                 it.sendSerialized(point)
+            }
+            val event = ServerSentEvent(Json.encodeToString(point), "newPoint", id.toString(), 1_000, null)
+            sseConnections.forEach {
+                it.send(event)
             }
         }
         route("/api") {
@@ -102,6 +115,17 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                     connections -= this
                 }
             }
+            sse("/sse") {
+                sseConnections += this
+                while (true) {
+                    delay(10000)
+                    try {
+                        send(ServerSentEvent("ping", "ping", null, 1_000, null))
+                    } catch (e: IOException) {
+                        sseConnections.remove(this)
+                    }
+                }
+            }
         }
 
 
@@ -121,13 +145,12 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             eda = 0,
             edfa = 0
         )
-        val pointSalzburg =
-            pointMunich.copy(
-                timestamp = Clock.System.now().minus(1.toDuration(DurationUnit.MINUTES)),
-                lat = 47.7994100,
-                lon = 13.0439900,
-                altitude = 520.0
-            )
+        val pointSalzburg = pointMunich.copy(
+            timestamp = Clock.System.now().minus(1.toDuration(DurationUnit.MINUTES)),
+            lat = 47.7994100,
+            lon = 13.0439900,
+            altitude = 520.0
+        )
         gpsPointService.create(pointMunich)
         gpsPointService.create(pointSalzburg)
         var lat = 47.7994100
@@ -140,6 +163,14 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             connections.forEach {
                 println("sending")
                 it.sendSerialized(point)
+            }
+            sseConnections.forEach {
+                println("sendingSSE")
+                try {
+                    it.send(ServerSentEvent(Json.encodeToString(point), id = point?.id.toString()))
+                } catch (e: IOException) {
+                    sseConnections.remove(it)
+                }
             }
             println("Loop")
             sleep(1000)
