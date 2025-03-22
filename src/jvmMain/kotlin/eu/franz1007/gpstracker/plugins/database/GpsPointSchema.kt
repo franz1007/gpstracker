@@ -1,14 +1,14 @@
-package eu.franz1007.gpstracker.plugins
+package eu.franz1007.gpstracker.plugins.database
 
 import eu.franz1007.gpstracker.model.GpsPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.time.DurationUnit
 
 @Serializable
 data class GpsPointNoId(
@@ -25,7 +25,16 @@ data class GpsPointNoId(
     val edfa: Int
 )
 
+
 class GpsPointService(database: Database) {
+
+    object Tracks : Table() {
+        val id = long("id").autoIncrement()
+        val startTimestamp = timestamp("startTimestamp")
+        val endTimestamp = timestamp("endTimestamp")
+        override val primaryKey = PrimaryKey(id)
+    }
+
     object GpsPoints : Table() {
         val id = long("id").autoIncrement()
         val timestamp = timestamp("timestamp")
@@ -39,32 +48,61 @@ class GpsPointService(database: Database) {
         val etfa = timestamp("etfa")
         val eda = integer("eda")
         val edfa = integer("edfa")
+        val trackId = long("track_id") references Tracks.id
 
         override val primaryKey = PrimaryKey(id)
     }
 
     init {
         transaction(database) {
+            SchemaUtils.create(Tracks)
             SchemaUtils.create(GpsPoints)
         }
     }
 
-    suspend fun create(
-        point: GpsPointNoId
-    ): Long = dbQuery {
-        GpsPoints.insert {
-            it[timestamp] = point.timestamp
-            it[lat] = point.lat
-            it[lon] = point.lon
-            it[hdop] = point.hdop
-            it[altitude] = point.altitude
-            it[speed] = point.speed
-            it[bearing] = point.bearing
-            it[eta] = point.eta
-            it[etfa] = point.etfa
-            it[eda] = point.eda
-            it[edfa] = point.edfa
-        }[GpsPoints.id]
+    suspend fun addPoint(point: GpsPointNoId): Long {
+        return dbQuery {
+            val latest = Tracks.select(Tracks.id, Tracks.endTimestamp).orderBy(Tracks.endTimestamp).limit(1).map {
+                Pair(it[Tracks.id],it[Tracks.endTimestamp])
+            }.singleOrNull()
+            val currentTrackId = if(latest == null){
+                Tracks.insert {
+                    it[startTimestamp] = point.timestamp
+                    it[endTimestamp] = point.timestamp
+                }[Tracks.id]
+            }
+            else{
+                // Create new Track if latest track is older than an hour
+                if(point.timestamp.minus(latest.second).inWholeMinutes > 60){
+                    Tracks.insert {
+                        it[startTimestamp] = point.timestamp
+                        it[endTimestamp] = point.timestamp
+                    }[Tracks.id]
+                }
+                else{
+                    latest.first
+                }
+            }
+
+            val newPointId = GpsPoints.insert {
+                it[timestamp] = point.timestamp
+                it[lat] = point.lat
+                it[lon] = point.lon
+                it[hdop] = point.hdop
+                it[altitude] = point.altitude
+                it[speed] = point.speed
+                it[bearing] = point.bearing
+                it[eta] = point.eta
+                it[etfa] = point.etfa
+                it[eda] = point.eda
+                it[edfa] = point.edfa
+                it[trackId] = currentTrackId
+            }[GpsPoints.id]
+            Tracks.update({ Tracks.id eq currentTrackId }) {
+                it[endTimestamp] = point.timestamp
+            }
+            return@dbQuery newPointId
+        }
     }
 
     suspend fun read(id: Long): GpsPoint? {
@@ -85,30 +123,6 @@ class GpsPointService(database: Database) {
                     it[GpsPoints.edfa]
                 )
             }.singleOrNull()
-        }
-    }
-
-    suspend fun update(point: GpsPoint) {
-        dbQuery {
-            GpsPoints.update({ GpsPoints.id eq point.id }) {
-                it[timestamp] = point.timestamp
-                it[lat] = point.lat
-                it[lon] = point.lon
-                it[hdop] = point.hdop
-                it[altitude] = point.altitude
-                it[speed] = point.speed
-                it[bearing] = point.bearing
-                it[eta] = point.eta
-                it[etfa] = point.etfa
-                it[eda] = point.eda
-                it[edfa] = point.edfa
-            }
-        }
-    }
-
-    suspend fun delete(id: Long) {
-        dbQuery {
-            GpsPoints.deleteWhere { GpsPoints.id.eq(id) }
         }
     }
 

@@ -17,9 +17,4 @@ fun Application.configureRouting() {
         }
     }
     install(SSE)
-    routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-    }
 }
