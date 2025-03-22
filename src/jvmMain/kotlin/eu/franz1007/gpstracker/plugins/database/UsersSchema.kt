@@ -1,4 +1,4 @@
-package eu.franz1007.gpstracker.plugins
+package eu.franz1007.gpstracker.plugins.database
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable

@@ -1,5 +1,6 @@
 package eu.franz1007.gpstracker.plugins
 
+import eu.franz1007.gpstracker.plugins.database.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -11,7 +12,6 @@ import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
 import io.ktor.sse.*
 import io.ktor.util.collections.*
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -87,7 +87,7 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             val eda = call.parameters["eda"]?.toInt() ?: throw BadRequestException("Invalid eda")
             val edfa = call.parameters["edfa"]?.toInt() ?: throw BadRequestException("Invalid edfa")
             val point = GpsPointNoId(timestamp, lat, lon, hdop, altitude, speed, bearing, eta, etfa, eda, edfa)
-            val id = gpsPointService.create(point)
+            val id = gpsPointService.addPoint(point)
             connections.forEach {
                 it.sendSerialized(point)
             }
@@ -151,14 +151,14 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             lon = 13.0439900,
             altitude = 520.0
         )
-        gpsPointService.create(pointMunich)
-        gpsPointService.create(pointSalzburg)
+        gpsPointService.addPoint(pointMunich)
+        gpsPointService.addPoint(pointSalzburg)
         var lat = 47.7994100
         var lon = 13.0439900
         repeat(1000) { repetition ->
             if ((repetition + 2) % 2 == 0) lat += 0.0001
             lon += 0.0001
-            val id = gpsPointService.create(pointSalzburg.copy(timestamp = Clock.System.now(), lat = lat, lon = lon))
+            val id = gpsPointService.addPoint(pointSalzburg.copy(timestamp = Clock.System.now(), lat = lat, lon = lon))
             val point = gpsPointService.read(id)
             connections.forEach {
                 println("sending")
