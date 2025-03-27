@@ -1,5 +1,6 @@
 package eu.franz1007.gpstracker.plugins
 
+import eu.franz1007.gpstracker.model.GpsPointNoId
 import eu.franz1007.gpstracker.plugins.database.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -97,8 +98,26 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             }
         }
         route("/api") {
-            get("/points") {
-                call.respond(gpsPointService.readAll())
+            route("/points") {
+                get {
+                    call.respond(gpsPointService.readAllPoints())
+                }
+                get("/byTrack/{trackId}") {
+                    val trackId = call.parameters["trackId"]?.toLong()
+                    if (trackId == null) {
+                        call.respond(HttpStatusCode.BadRequest)
+                        return@get
+                    }
+                    call.respond(gpsPointService.pointsByTrack(trackId))
+                }
+            }
+            route("/tracks"){
+                get{
+                    call.respond(gpsPointService.readAllTracksWithoutPoints())
+                }
+                get("/latest"){
+                    call.respondNullable(gpsPointService.readLatestTrack())
+                }
             }
             webSocket("/ws") {
                 println("Adding user!")
