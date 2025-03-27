@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
 import { environment } from '../environments/environment';
 import { firstValueFrom } from 'rxjs';
+import { GpsPoint } from './map/gps-point';
+import { Instant } from '@js-joda/core';
 
 @Injectable({
   providedIn: 'root'
@@ -13,22 +15,28 @@ export class MarkerService {
   constructor(private http: HttpClient) { }
 
   async getInitialPoints(): Promise<L.LatLng[]> {
-    const res = await firstValueFrom(this.http.get(this.pointsUrl)) as Array<any>
-    const points = Array<L.LatLng>()
-    res.sort((a: any, b: any) => {
-      if (a.timestamp < b.timestamp) {
+    const res = await firstValueFrom(this.http.get(this.pointsUrl, { responseType: 'text' }))
+    const points = JSON.parse(res, (key, value) => {
+      if (key === "eta" || key === "etfa" || key === "timestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as Array<GpsPoint>;
+    console.log(points);
+    const latLngs = Array<L.LatLng>()
+    points.sort((a: GpsPoint, b: GpsPoint) => {
+      if(a.timestamp.isBefore(b.timestamp)) {
         return -1;
       }
-      if (a.timestamp > b.timestamp) {
+      if (a.timestamp.isAfter(b.timestamp)) {
         return 1;
       }
       return 0;
     })
-    for (const c of res) {
-      points.push(new L.LatLng(c.lat, c.lon))
+    for (const c of points) {
+      latLngs.push(new L.LatLng(c.lat, c.lon))
     }
-    console.log("test123")
-    console.log(res)
-    return points
+    return latLngs
   }
 }

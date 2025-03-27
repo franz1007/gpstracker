@@ -45,10 +45,7 @@ export class MapComponent implements AfterViewInit {
     })
     this.sseService.createEventSource().subscribe(data => {
       console.log(data)
-      const obj = JSON.parse(data)
-      console.log(obj.lat)
-      console.log(obj.lon)
-      this.line.addLatLng(new L.LatLng(obj.lat, obj.lon))
+      this.line.addLatLng(new L.LatLng(data.lat, data.lon))
       this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
     })
       
