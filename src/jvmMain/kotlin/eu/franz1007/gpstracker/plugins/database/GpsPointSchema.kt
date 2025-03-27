@@ -1,29 +1,14 @@
 package eu.franz1007.gpstracker.plugins.database
 
 import eu.franz1007.gpstracker.model.GpsPoint
+import eu.franz1007.gpstracker.model.GpsPointNoId
+import eu.franz1007.gpstracker.model.Track
+import eu.franz1007.gpstracker.model.TrackNoPoints
 import kotlinx.coroutines.Dispatchers
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-import kotlin.time.DurationUnit
-
-@Serializable
-data class GpsPointNoId(
-    val timestamp: Instant,
-    val lat: Double,
-    val lon: Double,
-    val hdop: Double,
-    val altitude: Double,
-    val speed: Double,
-    val bearing: Double,
-    val eta: Instant,
-    val etfa: Instant,
-    val eda: Int,
-    val edfa: Int
-)
 
 
 class GpsPointService(database: Database) {
@@ -63,23 +48,21 @@ class GpsPointService(database: Database) {
     suspend fun addPoint(point: GpsPointNoId): Long {
         return dbQuery {
             val latest = Tracks.select(Tracks.id, Tracks.endTimestamp).orderBy(Tracks.endTimestamp).limit(1).map {
-                Pair(it[Tracks.id],it[Tracks.endTimestamp])
+                Pair(it[Tracks.id], it[Tracks.endTimestamp])
             }.singleOrNull()
-            val currentTrackId = if(latest == null){
+            val currentTrackId = if (latest == null) {
                 Tracks.insert {
                     it[startTimestamp] = point.timestamp
                     it[endTimestamp] = point.timestamp
                 }[Tracks.id]
-            }
-            else{
+            } else {
                 // Create new Track if latest track is older than an hour
-                if(point.timestamp.minus(latest.second).inWholeMinutes > 60){
+                if (point.timestamp.minus(latest.second).inWholeMinutes > 60) {
                     Tracks.insert {
                         it[startTimestamp] = point.timestamp
                         it[endTimestamp] = point.timestamp
                     }[Tracks.id]
-                }
-                else{
+                } else {
                     latest.first
                 }
             }
@@ -126,7 +109,7 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readAll(): List<GpsPoint> {
+    suspend fun readAllPoints(): List<GpsPoint> {
         return dbQuery {
             GpsPoints.selectAll().map {
                 GpsPoint(
@@ -147,9 +130,9 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readLatest(limit: Int): List<GpsPoint> {
+    suspend fun readLatestPoints(limit: Int): List<GpsPoint> {
         return dbQuery {
-            GpsPoints.selectAll().orderBy(GpsPoints.timestamp, SortOrder.ASC).limit(limit).map {
+            GpsPoints.selectAll().orderBy(GpsPoints.timestamp, SortOrder.DESC).limit(limit).map {
                 GpsPoint(
                     it[GpsPoints.id],
                     it[GpsPoints.timestamp],
@@ -165,6 +148,50 @@ class GpsPointService(database: Database) {
                     it[GpsPoints.edfa]
                 )
             }
+        }
+    }
+
+    suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
+        return dbQuery {
+            Tracks.selectAll().map {
+                TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp])
+            }
+        }
+    }
+
+    suspend fun readLatestTrack(): TrackNoPoints? {
+        return dbQuery {
+            Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1)
+                .map { TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp]) }.singleOrNull()
+        }
+    }
+
+    suspend fun readTrack(id: Long): Track? {
+        return dbQuery {
+            val (trackId, startTimestamp, endTimestamp) = Tracks.selectAll().where { Tracks.id eq id }.map {
+                Triple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp])
+            }.singleOrNull() ?: return@dbQuery null
+            val points = pointsByTrack(trackId)
+            Track(trackId, startTimestamp, endTimestamp, points)
+        }
+    }
+
+    fun pointsByTrack(id: Long): List<GpsPoint> {
+        return GpsPoints.selectAll().where { GpsPoints.trackId eq id }.orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
+            GpsPoint(
+                it[GpsPoints.id],
+                it[GpsPoints.timestamp],
+                it[GpsPoints.lat],
+                it[GpsPoints.lon],
+                it[GpsPoints.hdop],
+                it[GpsPoints.altitude],
+                it[GpsPoints.speed],
+                it[GpsPoints.bearing],
+                it[GpsPoints.eta],
+                it[GpsPoints.etfa],
+                it[GpsPoints.eda],
+                it[GpsPoints.edfa]
+            )
         }
     }
 
