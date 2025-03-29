@@ -14,7 +14,7 @@ app-map{
     overflow-x: hidden;
     transition: all 0.5s;
   }
-  /*Im using hover event to expand sidebar for example, you can use JS to handle click event*/
+  
   .container aside.expanding {
-    width: 10lh;
+    width: 20vh
   }
