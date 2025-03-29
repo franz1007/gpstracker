@@ -1,3 +1,20 @@
 app-map{
     height: 95vh;
 }
+
+  .container {
+    display: flex;
+  }
+  .container .main-body {
+    width: 100%;
+  }
+  .container aside {
+    width:3lh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: all 0.5s;
+  }
+  /*Im using hover event to expand sidebar for example, you can use JS to handle click event*/
+  .container aside.expanding {
+    width: 10lh;
+  }

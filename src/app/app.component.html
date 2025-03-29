@@ -1,16 +1,11 @@
-<p-drawer [(visible)]="visible" header="Drawer">
-    <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
-        et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-        aliquip ex ea commodo consequat.
-    </p>
-    <ul>
-        <li>
-            <div>test</div>
-            <button>test</button>
-            <p-button>test123</p-button>
-        </li>
-    </ul>
-</p-drawer>
-<p-button (click)="visible = true" icon="pi pi-arrow-right" />
-<app-map></app-map>
+<section class="container">
+	<aside [ngClass]="{'expanding': isExpanding}">
+        <p-button (onClick)="toggleSideBar()" icon="pi pi-bars"/>
+    </aside>
+	<div class="main-body">
+           
+    <app-map></app-map>
+	</div>
+    
+</section>
+
