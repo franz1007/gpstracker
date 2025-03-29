@@ -5,17 +5,28 @@ import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
+import { TrackNoPoints } from '../trackNoPoints';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MarkerService {
-  pointsUrl: string = environment.apiUrl + "/api/points"
+  pointsUrl: string = environment.apiUrl + "/api/points/byTrack"
+  latestTrackUrl: string = environment.apiUrl + "/api/tracks/latest"
+
 
   constructor(private http: HttpClient) { }
 
   async getInitialPoints(): Promise<L.LatLng[]> {
-    const res = await firstValueFrom(this.http.get(this.pointsUrl, { responseType: 'text' }))
+    const latestTrackString = await firstValueFrom(this.http.get(this.latestTrackUrl, { responseType: 'text' }))
+    const latestTrack = JSON.parse(latestTrackString, (key, value) =>{
+      if (key === "eta" || key === "etfa" || key === "timestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as TrackNoPoints
+    const res = await firstValueFrom(this.http.get(this.pointsUrl + "/" + latestTrack.id, { responseType: 'text' }))
     const points = JSON.parse(res, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp") {
         return Instant.parse(value);
@@ -26,7 +37,7 @@ export class MarkerService {
     console.log(points);
     const latLngs = Array<L.LatLng>()
     points.sort((a: GpsPoint, b: GpsPoint) => {
-      if(a.timestamp.isBefore(b.timestamp)) {
+      if (a.timestamp.isBefore(b.timestamp)) {
         return -1;
       }
       if (a.timestamp.isAfter(b.timestamp)) {
