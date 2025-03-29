@@ -1,9 +1,10 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect} from '@angular/core';
 import * as L from 'leaflet';
 import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { Subscription } from 'rxjs';
+import { GpsPoint } from './gps-point';
 
 
 @Component({
@@ -14,8 +15,9 @@ import { Subscription } from 'rxjs';
 })
 
 export class MapComponent implements AfterViewInit {
-  private map!: L.Map;
+  showTrackMode: InputSignal<string|TrackNoPoints> = input.required<string|TrackNoPoints>();
 
+  private map!: L.Map;
   private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 20,
     minZoom: 3,
@@ -23,11 +25,27 @@ export class MapComponent implements AfterViewInit {
   });
   private line!: L.Polyline
   private marker!: L.CircleMarker
-  private tracks!: Array<TrackNoPoints>
 
   private pointsSubscription: Subscription | null = null
 
-  constructor(private trackService: TrackService, private sseService: SsePointService) { }
+  constructor(private trackService: TrackService, private sseService: SsePointService) { 
+    effect(() => {
+      const mode = this.showTrackMode()
+      console.log(`showTrackMode changed: ${mode}`);
+      if(typeof(mode) === "string"){
+        if(mode === "latest"){
+          this.subscribeLatestTrack()
+        }
+        else{
+          console.log("Invalid value for showTrackMode")
+          console.log(mode)
+        }
+      }
+      else{
+        this.showTrack(mode)
+      }
+    });
+  }
 
   ngAfterViewInit(): void {
     this.map = L.map('map', {
@@ -38,21 +56,6 @@ export class MapComponent implements AfterViewInit {
     //this.markerService.makeCapitalMarkers(this.map);
     this.line = L.polyline([], { color: "red" }).addTo(this.map)
     this.marker = L.circleMarker(new L.LatLng(1, 1)).addTo(this.map)
-    this.subscribeLatestTrack()
-    this.trackService.getAllTracks().then(tracks => {
-      this.tracks = tracks;
-      console.log("Received Tracks")
-      console.log(tracks)
-    }).then(()=>{
-      setTimeout(()=>{
-        console.log("Showing single track")
-        this.showTrack(this.tracks[0])
-        setTimeout(() =>{
-          console.log("subscribing to latest track")
-          this.subscribeLatestTrack()
-        },20000)
-      }, 20000)
-    })
   }
 
   subscribeLatestTrack() {
