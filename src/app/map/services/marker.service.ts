@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
-import { environment } from '../environments/environment';
+import { environment } from '../../../environments/environment';
 import { firstValueFrom } from 'rxjs';
-import { GpsPoint } from './map/gps-point';
+import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
 
 @Injectable({

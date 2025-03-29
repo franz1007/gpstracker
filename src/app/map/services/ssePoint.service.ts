@@ -1,7 +1,7 @@
 import { Observable } from "rxjs";
-import { environment } from "../environments/environment";
+import { environment } from "../../../environments/environment";
 import { Injectable } from "@angular/core";
-import { GpsPoint } from "./map/gps-point";
+import { GpsPoint } from "../gps-point";
 
 @Injectable({
     providedIn: 'root'

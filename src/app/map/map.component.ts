@@ -1,8 +1,7 @@
 import { Component, AfterViewInit } from '@angular/core';
 import * as L from 'leaflet';
-import { MarkerService } from '../marker.service';
-import { SsePointService } from '../ssePoint.service';
-import { Observable } from 'rxjs';
+import { MarkerService } from './services/marker.service';
+import { SsePointService } from './services/ssePoint.service';
 
 
 @Component({
@@ -47,6 +46,7 @@ export class MapComponent implements AfterViewInit {
       console.log(data)
       this.line.addLatLng(new L.LatLng(data.lat, data.lon))
       this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+      this.line.setLatLngs
     })
       
     
