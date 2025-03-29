@@ -47,9 +47,11 @@ class GpsPointService(database: Database) {
 
     suspend fun addPoint(point: GpsPointNoId): Long {
         return dbQuery {
-            val latest = Tracks.select(Tracks.id, Tracks.endTimestamp).orderBy(Tracks.endTimestamp).limit(1).map {
-                Pair(it[Tracks.id], it[Tracks.endTimestamp])
-            }.singleOrNull()
+            val latest =
+                Tracks.select(Tracks.id, Tracks.endTimestamp).orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1)
+                    .map {
+                        Pair(it[Tracks.id], it[Tracks.endTimestamp])
+                    }.singleOrNull()
             val currentTrackId = if (latest == null) {
                 Tracks.insert {
                     it[startTimestamp] = point.timestamp
@@ -176,22 +178,24 @@ class GpsPointService(database: Database) {
         }
     }
 
-    fun pointsByTrack(id: Long): List<GpsPoint> {
-        return GpsPoints.selectAll().where { GpsPoints.trackId eq id }.orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
-            GpsPoint(
-                it[GpsPoints.id],
-                it[GpsPoints.timestamp],
-                it[GpsPoints.lat],
-                it[GpsPoints.lon],
-                it[GpsPoints.hdop],
-                it[GpsPoints.altitude],
-                it[GpsPoints.speed],
-                it[GpsPoints.bearing],
-                it[GpsPoints.eta],
-                it[GpsPoints.etfa],
-                it[GpsPoints.eda],
-                it[GpsPoints.edfa]
-            )
+    suspend fun pointsByTrack(id: Long): List<GpsPoint> {
+        return dbQuery {
+            GpsPoints.selectAll().where { GpsPoints.trackId eq id }.orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
+                GpsPoint(
+                    it[GpsPoints.id],
+                    it[GpsPoints.timestamp],
+                    it[GpsPoints.lat],
+                    it[GpsPoints.lon],
+                    it[GpsPoints.hdop],
+                    it[GpsPoints.altitude],
+                    it[GpsPoints.speed],
+                    it[GpsPoints.bearing],
+                    it[GpsPoints.eta],
+                    it[GpsPoints.etfa],
+                    it[GpsPoints.eda],
+                    it[GpsPoints.edfa]
+                )
+            }
         }
     }
 

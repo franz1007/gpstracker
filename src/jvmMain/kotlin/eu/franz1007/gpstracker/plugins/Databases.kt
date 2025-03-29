@@ -1,7 +1,9 @@
 package eu.franz1007.gpstracker.plugins
 
 import eu.franz1007.gpstracker.model.GpsPointNoId
-import eu.franz1007.gpstracker.plugins.database.*
+import eu.franz1007.gpstracker.plugins.database.ExposedUser
+import eu.franz1007.gpstracker.plugins.database.GpsPointService
+import eu.franz1007.gpstracker.plugins.database.UserService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
@@ -15,14 +17,18 @@ import io.ktor.sse.*
 import io.ktor.util.collections.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
-import java.lang.Thread.sleep
 import java.util.*
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -170,30 +176,44 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             lon = 13.0439900,
             altitude = 520.0
         )
-        gpsPointService.addPoint(pointMunich)
-        gpsPointService.addPoint(pointSalzburg)
-        var lat = 47.7994100
-        var lon = 13.0439900
-        repeat(1000) { repetition ->
-            if ((repetition + 2) % 2 == 0) lat += 0.0001
-            lon += 0.0001
-            val id = gpsPointService.addPoint(pointSalzburg.copy(timestamp = Clock.System.now(), lat = lat, lon = lon))
-            val point = gpsPointService.read(id)
-            connections.forEach {
-                println("sending")
-                it.sendSerialized(point)
-            }
-            sseConnections.forEach {
-                println("sendingSSE")
-                try {
-                    it.send(ServerSentEvent(Json.encodeToString(point), id = point?.id.toString()))
-                } catch (e: IOException) {
-                    sseConnections.remove(it)
-                }
-            }
-            println("Loop")
-            sleep(1000)
+
+        runBlocking {
+            initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
+        }
+        runBlocking {
+            initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
+
         }
     }
-
+}
+suspend fun initPoints(
+    startingPoint: GpsPointNoId,
+    gpsPointService: GpsPointService,
+    connections: MutableSet<DefaultWebSocketServerSession>,
+    sseConnections: MutableSet<ServerSSESession>,
+    delay: Duration,
+    timeAgo: Duration
+){
+    var lat = startingPoint.lat
+    var lon = startingPoint.lon
+    repeat(1000) { repetition ->
+        if ((repetition + 2) % 2 == 0) lat += 0.0001
+        lon += 0.0001
+        val timestamp = Clock.System.now().minus(timeAgo)
+        val id = gpsPointService.addPoint(startingPoint.copy(timestamp, lat = lat, lon = lon))
+        val point = gpsPointService.read(id)
+        connections.forEach {
+            println("sending")
+            it.sendSerialized(point)
+        }
+        sseConnections.forEach {
+            println("sendingSSE")
+            try {
+                it.send(ServerSentEvent(Json.encodeToString(point), id = point?.id.toString()))
+            } catch (e: IOException) {
+                sseConnections.remove(it)
+            }
+        }
+        delay(delay)
+    }
 }
