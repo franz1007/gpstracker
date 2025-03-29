@@ -10,14 +10,15 @@ import { TrackNoPoints } from '../trackNoPoints';
 @Injectable({
   providedIn: 'root'
 })
-export class MarkerService {
+export class TrackService {
   pointsUrl: string = environment.apiUrl + "/api/points/byTrack"
   latestTrackUrl: string = environment.apiUrl + "/api/tracks/latest"
+  tracksUrl: string = environment.apiUrl + "/api/tracks"
 
 
   constructor(private http: HttpClient) { }
 
-  async getInitialPoints(): Promise<L.LatLng[]> {
+  async getLatestTrack(): Promise<L.LatLng[]> {
     const latestTrackString = await firstValueFrom(this.http.get(this.latestTrackUrl, { responseType: 'text' }))
     const latestTrack = JSON.parse(latestTrackString, (key, value) =>{
       if (key === "eta" || key === "etfa" || key === "timestamp") {
@@ -26,7 +27,11 @@ export class MarkerService {
         return value;
       }
     }) as TrackNoPoints
-    const res = await firstValueFrom(this.http.get(this.pointsUrl + "/" + latestTrack.id, { responseType: 'text' }))
+    return this.getTrack(latestTrack)
+  }
+
+  async getTrack(track: TrackNoPoints): Promise<L.LatLng[]>{
+    const res = await firstValueFrom(this.http.get(this.pointsUrl + "/" + track.id, { responseType: 'text' }))
     const points = JSON.parse(res, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp") {
         return Instant.parse(value);
@@ -49,5 +54,17 @@ export class MarkerService {
       latLngs.push(new L.LatLng(c.lat, c.lon))
     }
     return latLngs
+  }
+
+  async getAllTracks(): Promise<Array<TrackNoPoints>>{
+    const tracksString = await firstValueFrom(this.http.get(this.tracksUrl, { responseType: 'text' }))
+    const tracks = JSON.parse(tracksString, (key, value) =>{
+      if (key === "eta" || key === "etfa" || key === "timestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as Array<TrackNoPoints>
+    return tracks
   }
 }

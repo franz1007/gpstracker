@@ -24,7 +24,10 @@ export class SsePointService {
         eventSource.onopen = ev => {
             console.log(ev)
         }
-        return () => eventSource.close()
+        return () => {
+            console.log("Closing eventSource")
+            eventSource.close()
+        }
       })
    }
 }
