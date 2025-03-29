@@ -1,11 +1,10 @@
 <section class="container">
-	<aside [ngClass]="{'expanding': isExpanding}" [ngStyle]="{backgroundColor:'var(--p-content-background)', color: 'var(--primary-color-text)'}">
+	<aside [ngClass]="{'expanding': isExpanding}" [ngStyle]="{backgroundColor:'var(--p-content-background)'}">
         <p-button (onClick)="toggleSideBar()" icon="pi pi-bars"/>
-        <p-tree [value]="files" styleClass="w-full md:w-[30rem]" />
+        <p-tree [value]="files" />
     </aside>
 	<div class="main-body">
     <app-map></app-map>
 	</div>
-    
 </section>
 
