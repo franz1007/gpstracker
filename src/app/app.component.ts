@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal, InputSignal, input, effect } from '@angular/core';
+import { Component, signal, WritableSignal, InputSignal, input, effect, computed, Signal, linkedSignal } from '@angular/core';
 import { MapComponent } from './map/map.component';
 import { DrawerModule } from 'primeng/drawer'
 import { ButtonModule } from 'primeng/button'
@@ -20,29 +20,38 @@ export class AppComponent {
   title = 'angular-leaflet-example';
   files!: TreeNode[];
   isExpanding = false;
-  mapTrackMode: string | TrackNoPoints = "latest"
+  mapTrackMode: WritableSignal<string | TrackNoPoints> = linkedSignal<string | TrackNoPoints>(() => {
+    const selection = this.selection()
+    if (selection !== undefined && selection !== null) {
+      const data = selection.data
+      console.log("effect")
+      console.log(selection)
+      if (data !== null && data !== undefined) {
+        if (data === 'latest') {
+          return 'latest'
+        }
+        else {
+          if (typeof (data.id) === 'number') {
+            return data
+          }
+          else{
+            return "latest"
+          }
+        }
+      }
+      else {
+        return "latest"
+      }
+    }
+    else {
+      return "latest"
+    }
+  })
   private tracks!: Array<TrackNoPoints>
   selection: WritableSignal<any> = signal("test")
 
   constructor(private trackService: TrackService) {
-    effect(() => {
-      const selection = this.selection()
-      if (selection !== undefined && selection !== null) {
-        const data = selection.data
-        console.log("effect")
-        console.log(selection)
-        if (data !== null && data !== undefined) {
-          if (data === 'latest') {
-            this.mapTrackMode = 'latest'
-          }
-          else {
-            if (typeof (data.id) === 'number') {
-              this.mapTrackMode = data
-            }
-          }
-        }
-      }
-    })
+
   }
 
   toggleSideBar() {

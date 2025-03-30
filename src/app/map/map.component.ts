@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect} from '@angular/core';
+import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal} from '@angular/core';
 import * as L from 'leaflet';
 import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
@@ -15,7 +15,7 @@ import { GpsPoint } from './gps-point';
 })
 
 export class MapComponent implements AfterViewInit {
-  showTrackMode: InputSignal<string|TrackNoPoints> = input.required<string|TrackNoPoints>();
+  showTrackMode: ModelSignal<string|TrackNoPoints> = model.required<string|TrackNoPoints>();
 
   private map!: L.Map;
   private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
