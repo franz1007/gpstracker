@@ -61,14 +61,14 @@ export class AppComponent {
   getTreeNodesData() {
     const trackNodes: Array<TreeNode> = this.tracks.map((track, index) => {
       return {
-        key: '0-' + index + 1,
+        key: '0-' + (index + 1),
         label: track.startTimestamp.toString(),
         data: track,
         icon: 'pi pi-fw pi-cog',
       }
     })
     const latestNode: Array<TreeNode> = [{
-      key: '0',
+      key: '0-0',
       label: 'Current track',
       data: 'latest',
       icon: 'pi pi-fw pi-cog',
