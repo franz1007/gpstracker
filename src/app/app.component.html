@@ -1,7 +1,7 @@
 <section class="container">
 	<aside [ngClass]="{'expanding': isExpanding}" [ngStyle]="{backgroundColor:'var(--p-content-background)'}">
         <p-button (onClick)="toggleSideBar()" icon="pi pi-bars"/>
-        <p-tree [value]="files" />
+        <p-tree [value]="files" selectionMode="single"  [(selection)]="selection"/>
     </aside>
 	<div class="main-body">
     <app-map [showTrackMode]="mapTrackMode"></app-map>
