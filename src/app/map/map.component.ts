@@ -50,8 +50,10 @@ export class MapComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     this.map = L.map('map', {
       center: [49.65254208294224, 10.635266687654777],
-      zoom: 7
+      zoom: 7,
+      zoomControl: false,
     });
+    L.control.zoom({position: 'topright'}).addTo(this.map)
     this.tiles.addTo(this.map)
     //this.markerService.makeCapitalMarkers(this.map);
     this.line = L.polyline([], { color: "red" }).addTo(this.map)
