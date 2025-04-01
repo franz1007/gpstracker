@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.sse)
+    testImplementation(libs.kotlin.test.junit)
 }
 
 kotlin {

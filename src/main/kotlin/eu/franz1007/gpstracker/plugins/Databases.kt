@@ -1,6 +1,9 @@
 package eu.franz1007.gpstracker.plugins
 
+import eu.franz1007.gpstracker.gpxtool.GpxParser
 import eu.franz1007.gpstracker.model.GpsPointNoId
+import eu.franz1007.gpstracker.model.TrackNoId
+import eu.franz1007.gpstracker.model.TrackNoPoints
 import eu.franz1007.gpstracker.plugins.database.ExposedUser
 import eu.franz1007.gpstracker.plugins.database.GpsPointService
 import eu.franz1007.gpstracker.plugins.database.UserService
@@ -25,6 +28,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import java.util.*
+import kotlin.io.path.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.listDirectoryEntries
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
@@ -117,11 +124,11 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                     call.respond(gpsPointService.pointsByTrack(trackId))
                 }
             }
-            route("/tracks"){
-                get{
+            route("/tracks") {
+                get {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
-                get("/latest"){
+                get("/latest") {
                     call.respondNullable(gpsPointService.readLatestTrack())
                 }
             }
@@ -177,6 +184,15 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             altitude = 520.0
         )
 
+        run{
+            val parser = GpxParser()
+            Path("September2024").listDirectoryEntries().filter{it.isRegularFile()}.forEach{
+                println(it)
+                val gpx = parser.parseGpx(it.inputStream())
+                gpsPointService.importTrack(TrackNoId.fromGpxTrack(gpx))
+            }
+        }
+
         runBlocking {
             initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
         }
@@ -185,6 +201,7 @@ fun Application.configureDatabases(config: ApplicationConfig) {
         }
     }
 }
+
 suspend fun initPoints(
     startingPoint: GpsPointNoId,
     gpsPointService: GpsPointService,
@@ -192,7 +209,7 @@ suspend fun initPoints(
     sseConnections: MutableSet<ServerSSESession>,
     delay: Duration,
     timeAgo: Duration
-){
+) {
     var lat = startingPoint.lat
     var lon = startingPoint.lon
     repeat(1000) { repetition ->
