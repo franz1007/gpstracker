@@ -59,7 +59,7 @@ export class TrackService {
   async getAllTracks(): Promise<Array<TrackNoPoints>>{
     const tracksString = await firstValueFrom(this.http.get(this.tracksUrl, { responseType: 'text' }))
     const tracks = JSON.parse(tracksString, (key, value) =>{
-      if (key === "eta" || key === "etfa" || key === "timestamp") {
+      if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
         return Instant.parse(value);
       } else {
         return value;

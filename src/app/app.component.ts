@@ -34,7 +34,7 @@ export class AppComponent {
           if (typeof (data.id) === 'number') {
             return data
           }
-          else{
+          else {
             return "latest"
           }
         }
@@ -59,9 +59,13 @@ export class AppComponent {
   }
   ngOnInit() {
     this.trackService.getAllTracks().then(tracks => {
-      this.tracks = tracks;
+
+      this.tracks = tracks.sort((a, b) => {
+        a.startTimestamp.compareTo(b.endTimestamp)
+        return a.startTimestamp.compareTo(b.startTimestamp)
+      });
       console.log("Received Tracks")
-      console.log(tracks)
+      console.log(this.tracks)
     }).then(() => {
       this.files = this.getTreeNodesData()
     })

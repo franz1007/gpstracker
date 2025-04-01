@@ -1,10 +1,10 @@
 app-map {
-  height: 98vh;
+  height: 99vh;
   width: 100%;
 }
 
 .container {
-  height: 98vh;
+  height: 99vh;
   display: flex;
 }
 
@@ -24,7 +24,6 @@ app-map {
   width: 30vh
 }
 
-
 #map {
   position: absolute;
   top: 0;
@@ -37,6 +36,7 @@ app-map {
   left: 0;
   z-index: 10000;
 }
-#overlaybutton.expanding{
+
+#overlaybutton.expanding {
   display: none;
 }
