@@ -182,7 +182,6 @@ fun Application.configureDatabases(config: ApplicationConfig) {
         }
         runBlocking {
             initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
-
         }
     }
 }
