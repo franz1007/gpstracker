@@ -1,9 +1,6 @@
 package eu.franz1007.gpstracker.plugins.database
 
-import eu.franz1007.gpstracker.model.GpsPoint
-import eu.franz1007.gpstracker.model.GpsPointNoId
-import eu.franz1007.gpstracker.model.Track
-import eu.franz1007.gpstracker.model.TrackNoPoints
+import eu.franz1007.gpstracker.model.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
@@ -87,6 +84,32 @@ class GpsPointService(database: Database) {
                 it[endTimestamp] = point.timestamp
             }
             return@dbQuery newPointId
+        }
+    }
+
+    suspend fun importTrack(track: TrackNoId): Long {
+        return dbQuery {
+            val id = Tracks.insert {
+                it[startTimestamp] = track.startTimestamp
+                it[endTimestamp] = track.endTimestamp
+            }[Tracks.id]
+            track.points.forEach { point ->
+                GpsPoints.insert {
+                    it[timestamp] = point.timestamp
+                    it[lat] = point.lat
+                    it[lon] = point.lon
+                    it[hdop] = point.hdop
+                    it[altitude] = point.altitude
+                    it[speed] = point.speed
+                    it[bearing] = point.bearing
+                    it[eta] = point.eta
+                    it[etfa] = point.etfa
+                    it[eda] = point.eda
+                    it[edfa] = point.edfa
+                    it[trackId] = id
+                }[GpsPoints.id]
+            }
+            return@dbQuery id
         }
     }
 
