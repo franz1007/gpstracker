@@ -22,7 +22,7 @@ export class AppComponent {
   files!: TreeNode[];
   isExpanding = false;
   selection: WritableSignal<any> = signal(null)
-  mapTrackMode: WritableSignal<string | TrackNoPoints | null> = linkedSignal<string | TrackNoPoints | null>(() => {
+  mapTrackMode: WritableSignal<string | TrackNoPoints[] | null> = linkedSignal<string | TrackNoPoints[] | null>(() => {
     const selection = this.selection()
     console.log("Selection changed: " + selection)
     if (selection !== undefined && selection !== null) {
@@ -32,11 +32,18 @@ export class AppComponent {
           return 'latest'
         }
         else {
-          if (typeof (data.id) === 'number') {
-            return data
+          console.log(data instanceof TrackNoPoints)
+          console.log(data instanceof Array)
+          if (data instanceof TrackNoPoints) {
+            return [data]
           }
           else {
-            return null
+            if (data instanceof Array) {
+              return data as Array<TrackNoPoints>
+            }
+            else {
+              return null
+            }
           }
         }
       }
@@ -86,7 +93,7 @@ export class AppComponent {
         array.push(track)
       }
     })
-    
+
     const nodes: Array<TreeNode> = new Array()
 
     var index = 0
@@ -104,7 +111,7 @@ export class AppComponent {
         {
           key: '1-' + (index++),
           label: entry[0],
-          data: entry[0],
+          data: entry[1],
           icon: 'pi pi-fw pi-cog',
           children: children
         }
@@ -121,7 +128,7 @@ export class AppComponent {
       {
         key: '1',
         label: 'Tracks',
-        data: 'Tracks Folder',
+        data: this.tracks,
         icon: 'pi pi-fw pi-folder-plus',
         children: nodes
       },

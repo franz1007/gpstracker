@@ -20,7 +20,7 @@ export class TrackService {
 
   async getLatestTrack(): Promise<L.LatLng[]> {
     const latestTrackString = await firstValueFrom(this.http.get(this.latestTrackUrl, { responseType: 'text' }))
-    const latestTrack = JSON.parse(latestTrackString, (key, value) =>{
+    const latestTrack = JSON.parse(latestTrackString, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp") {
         return Instant.parse(value);
       } else {
@@ -30,7 +30,7 @@ export class TrackService {
     return this.getTrack(latestTrack)
   }
 
-  async getTrack(track: TrackNoPoints): Promise<L.LatLng[]>{
+  async getTrack(track: TrackNoPoints): Promise<L.LatLng[]> {
     const res = await firstValueFrom(this.http.get(this.pointsUrl + "/" + track.id, { responseType: 'text' }))
     const points = JSON.parse(res, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp") {
@@ -56,15 +56,17 @@ export class TrackService {
     return latLngs
   }
 
-  async getAllTracks(): Promise<Array<TrackNoPoints>>{
+  async getAllTracks(): Promise<Array<TrackNoPoints>> {
     const tracksString = await firstValueFrom(this.http.get(this.tracksUrl, { responseType: 'text' }))
-    const tracks = JSON.parse(tracksString, (key, value) =>{
+    const tracks = JSON.parse(tracksString, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
         return Instant.parse(value);
       } else {
         return value;
       }
     }) as Array<TrackNoPoints>
-    return tracks
+    return tracks.map((track) => {
+      return new TrackNoPoints(track.id, track.startTimestamp, track.endTimestamp)
+    })
   }
 }
