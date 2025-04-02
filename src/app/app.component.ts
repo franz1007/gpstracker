@@ -21,7 +21,8 @@ export class AppComponent {
   title = 'angular-leaflet-example';
   files!: TreeNode[];
   isExpanding = false;
-  mapTrackMode: WritableSignal<string | TrackNoPoints> = linkedSignal<string | TrackNoPoints>(() => {
+  selection: WritableSignal<any> = signal("latest")
+  mapTrackMode: WritableSignal<string | TrackNoPoints | null> = linkedSignal<string | TrackNoPoints | null>(() => {
     const selection = this.selection()
     if (selection !== undefined && selection !== null) {
       const data = selection.data
@@ -36,20 +37,19 @@ export class AppComponent {
             return data
           }
           else {
-            return "latest"
+            return null
           }
         }
       }
       else {
-        return "latest"
+        return null
       }
     }
     else {
-      return "latest"
+      return null
     }
   })
   private tracks!: Array<TrackNoPoints>
-  selection: WritableSignal<any> = signal("test")
 
   constructor(private trackService: TrackService) {
 

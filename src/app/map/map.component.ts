@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal} from '@angular/core';
+import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal } from '@angular/core';
 import * as L from 'leaflet';
 import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
@@ -14,50 +14,51 @@ import { GpsPoint } from './gps-point';
   styleUrl: './map.component.css'
 })
 
-export class MapComponent implements AfterViewInit {
-  showTrackMode: ModelSignal<string|TrackNoPoints> = model.required<string|TrackNoPoints>();
+export class MapComponent  {
+  showTrackMode: ModelSignal<string | TrackNoPoints | null> = model.required<string | TrackNoPoints | null>();
 
-  private map!: L.Map;
+  private map: L.Map = L.map('map', {
+    center: [49.65254208294224, 10.635266687654777],
+    zoom: 7,
+    zoomControl: false,
+  });
   private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 20,
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-  private line!: L.Polyline
-  private marker!: L.CircleMarker
+  private line: L.Polyline = L.polyline([], { color: "red" })
+  private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
 
   private pointsSubscription: Subscription | null = null
 
-  constructor(private trackService: TrackService, private sseService: SsePointService) { 
+  constructor(private trackService: TrackService, private sseService: SsePointService) {
+    L.control.zoom({ position: 'topright' }).addTo(this.map)
+    this.tiles.addTo(this.map)
+    this.line.addTo(this.map)
+    this.marker.addTo(this.map)
+
     effect(() => {
       const mode = this.showTrackMode()
       console.log(`showTrackMode changed: ${mode}`);
-      if(typeof(mode) === "string"){
-        if(mode === "latest"){
+      if (typeof (mode) === "string") {
+        if (mode === "latest") {
           this.subscribeLatestTrack()
         }
-        else{
+        else {
           console.log("Invalid value for showTrackMode")
           console.log(mode)
         }
       }
-      else{
-        this.showTrack(mode)
+      else {
+        if (mode === null) {
+          this.showNoTrack()
+        }
+        else {
+          this.showTrack(mode)
+        }
       }
     });
-  }
-
-  ngAfterViewInit(): void {
-    this.map = L.map('map', {
-      center: [49.65254208294224, 10.635266687654777],
-      zoom: 7,
-      zoomControl: false,
-    });
-    L.control.zoom({position: 'topright'}).addTo(this.map)
-    this.tiles.addTo(this.map)
-    //this.markerService.makeCapitalMarkers(this.map);
-    this.line = L.polyline([], { color: "red" }).addTo(this.map)
-    this.marker = L.circleMarker(new L.LatLng(1, 1)).addTo(this.map)
   }
 
   subscribeLatestTrack() {
@@ -65,7 +66,12 @@ export class MapComponent implements AfterViewInit {
       this.line.setLatLngs(points)
       this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
       this.marker.setRadius(20)
-
+      if (!this.map.hasLayer(this.line)) {
+        this.line.addTo(this.map)
+      }
+      if (!this.map.hasLayer(this.marker)) {
+        this.marker.addTo(this.map)
+      }
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
         console.log(data)
@@ -85,6 +91,17 @@ export class MapComponent implements AfterViewInit {
       this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
       this.marker.setRadius(20)
     })
+    if (!this.map.hasLayer(this.line)) {
+      this.line.addTo(this.map)
+    }
+    if (!this.map.hasLayer(this.marker)) {
+      this.marker.addTo(this.map)
+    }
+  }
+
+  showNoTrack() {
+    this.line.removeFrom(this.map)
+    this.marker.removeFrom(this.map)
   }
 
 }
