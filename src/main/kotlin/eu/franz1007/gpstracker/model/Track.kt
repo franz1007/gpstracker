@@ -16,13 +16,13 @@ data class TrackNoId(val startTimestamp: Instant, val endTimestamp: Instant, val
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
             val points = gpx.trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
                 GpsPointNoId(
-                    timestamp = it.time,
+                    timestamp = it.time ?: Instant.fromEpochMilliseconds(0),
                     lat = it.lat,
                     lon = it.lon,
-                    hdop = it.hdop,
-                    altitude = it.ele,
-                    speed = it.extensions.osmandSpeed ?: -1.0,
-                    bearing = it.extensions.osmandHeading ?: -1.0,
+                    hdop = it.hdop ?: -1.0,
+                    altitude = it.ele ?: -1.0,
+                    speed = it.extensions?.osmandSpeed ?: -1.0,
+                    bearing = it.extensions?.osmandHeading ?: -1.0,
                     eta = Instant.fromEpochMilliseconds(0),
                     etfa = Instant.fromEpochMilliseconds(0),
                     eda = -1,
