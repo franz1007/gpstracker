@@ -21,13 +21,12 @@ export class AppComponent {
   title = 'angular-leaflet-example';
   files!: TreeNode[];
   isExpanding = false;
-  selection: WritableSignal<any> = signal("latest")
+  selection: WritableSignal<any> = signal(null)
   mapTrackMode: WritableSignal<string | TrackNoPoints | null> = linkedSignal<string | TrackNoPoints | null>(() => {
     const selection = this.selection()
+    console.log("Selection changed: " + selection)
     if (selection !== undefined && selection !== null) {
       const data = selection.data
-      console.log("effect")
-      console.log(selection)
       if (data !== null && data !== undefined) {
         if (data === 'latest') {
           return 'latest'
@@ -69,6 +68,7 @@ export class AppComponent {
       console.log(this.tracks)
     }).then(() => {
       this.files = this.getTreeNodesData()
+      this.selection.set(this.files[0])
     })
   }
 
