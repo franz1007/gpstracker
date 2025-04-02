@@ -1,6 +1,5 @@
 package eu.franz1007.gpstracker.gpxtool
 
-import eu.franz1007.gpstracker.model.Track
 import kotlinx.datetime.Instant
 import org.w3c.dom.Element
 import org.w3c.dom.Node
@@ -15,7 +14,7 @@ data class Trkpt(
 
 data class Trk(val trksegList: List<Trkseg>)
 data class Trkseg(val trkptList: List<Trkpt>)
-data class Gpx(val metadata: Metadata, val Trks: List<Trk>)
+data class Gpx(val metadata: Metadata, val trks: List<Trk>)
 
 class GpxParser {
     fun parseGpx(stream: InputStream): Gpx {
@@ -39,7 +38,7 @@ class GpxParser {
                 val segs = mutableListOf<Trkseg>()
                 for (j in 0..<trkSegNodeList.length) {
                     val trkPts: List<Trkpt> =
-                        (trkSegNodeList.item(i) as Element).getElementsByTagName("trkpt").let { trkptNodeList ->
+                        (trkSegNodeList.item(j) as Element).getElementsByTagName("trkpt").let { trkptNodeList ->
                             val points = mutableListOf<Trkpt>()
                             for (k in 0..<trkptNodeList.length) {
                                 val trkptNode = trkptNodeList.item(k) as Element
@@ -58,6 +57,7 @@ class GpxParser {
                                     )
                                 }
                                 points.add(Trkpt(lat, lon, ele, hdop, time, extensions))
+                                println("added: ${points.last()}")
                             }
                             points
                         }

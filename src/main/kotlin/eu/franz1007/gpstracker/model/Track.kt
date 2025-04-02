@@ -2,13 +2,19 @@ package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.Gpx
 import kotlinx.datetime.Instant
+import kotlinx.serialization.Serializable
 
 data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Instant, val points: List<GpsPoint>)
 
-data class TrackNoId(val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>){
-    companion object{
+@Serializable
+data class TrackNoPoints(
+    val id: Long, val startTimestamp: Instant, val endTimestamp: Instant
+)
+
+data class TrackNoId(val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>) {
+    companion object {
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
-            val points = gpx.Trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
+            val points = gpx.trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
                 GpsPointNoId(
                     timestamp = it.time,
                     lat = it.lat,
