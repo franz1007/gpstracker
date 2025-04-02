@@ -184,6 +184,7 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             altitude = 520.0
         )
 
+
         run{
             val parser = GpxParser()
             Path("September2024").listDirectoryEntries().filter{it.isRegularFile()}.forEach{
