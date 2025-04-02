@@ -7,6 +7,7 @@ import { TreeModule, TreeNodeSelectEvent } from 'primeng/tree';
 import { TreeNode, } from 'primeng/api';
 import { TrackNoPoints } from './map/trackNoPoints';
 import { TrackService } from './map/services/track.service';
+import { DateTimeFormatter, LocalDateTime, YearMonth } from '@js-joda/core';
 
 
 
@@ -72,23 +73,51 @@ export class AppComponent {
   }
 
   getTreeNodesData() {
-    const trackNodes: Array<TreeNode> = this.tracks.map((track, index) => {
-      return {
-        key: '0-' + (index + 1),
-        label: track.startTimestamp.toString(),
-        data: track,
-        icon: 'pi pi-fw pi-cog',
+
+    const trackMap = new Map<string, Array<TrackNoPoints>>()
+    const formatter = DateTimeFormatter.ofPattern('yyyy-MM') // 4/28/2018
+    this.tracks.forEach(track => {
+      const month = LocalDateTime.ofInstant(track.startTimestamp).format(formatter)
+      const array = trackMap.get(month)
+      if (array === undefined) {
+        trackMap.set(month, new Array(track))
+      }
+      else {
+        array.push(track)
       }
     })
-    const latestNode: Array<TreeNode> = [{
-      key: '0-0',
-      label: 'Current track',
-      data: 'latest',
-      icon: 'pi pi-fw pi-cog',
-    }]
-    const nodes = latestNode.concat(trackNodes)
-    return [
+    
+    const nodes: Array<TreeNode> = new Array()
 
+    var index = 0
+
+    for (const entry of trackMap) {
+      const children = entry[1].map((track, j) => {
+        return {
+          key: '1-' + index.toString() + "-" + j,
+          label: track.startTimestamp.toString(),
+          data: track,
+          icon: 'pi pi-fw pi-cog',
+        }
+      })
+      nodes.push(
+        {
+          key: '1-' + (index++),
+          label: entry[0],
+          data: entry[0],
+          icon: 'pi pi-fw pi-cog',
+          children: children
+        }
+      )
+    }
+
+    return [
+      {
+        key: '0',
+        label: 'Current track',
+        data: 'latest',
+        icon: 'pi pi-fw pi-cog',
+      },
       {
         key: '1',
         label: 'Tracks',
