@@ -8,9 +8,11 @@ import eu.franz1007.gpstracker.plugins.database.ExposedUser
 import eu.franz1007.gpstracker.plugins.database.GpsPointService
 import eu.franz1007.gpstracker.plugins.database.UserService
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.config.*
 import io.ktor.server.plugins.*
+import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -27,6 +29,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
+import java.nio.file.Files
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
@@ -116,6 +119,7 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                     call.respond(gpsPointService.readAllPoints())
                 }
                 get("/byTrack/{trackId}") {
+                    call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
                     val trackId = call.parameters["trackId"]?.toLong()
                     if (trackId == null) {
                         call.respond(HttpStatusCode.BadRequest)
@@ -185,12 +189,14 @@ fun Application.configureDatabases(config: ApplicationConfig) {
         )
 
 
+        /*
         run{
             val parser = GpxParser()
-            Path("September2024").listDirectoryEntries().filter{it.isRegularFile()}.forEach{
-                println(it)
-                val gpx = parser.parseGpx(it.inputStream())
-                gpsPointService.importTrack(TrackNoId.fromGpxTrack(gpx))
+            val tracks = Files.walk(Path("tracks")).filter { it.isRegularFile() }.map{
+                TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
+            }.toList()
+            tracks.forEach{
+                gpsPointService.importTrack(it)
             }
         }
 
@@ -200,6 +206,8 @@ fun Application.configureDatabases(config: ApplicationConfig) {
         runBlocking {
             initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
         }
+
+         */
     }
 }
 

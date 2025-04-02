@@ -9,7 +9,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 data class Metadata(val name: String, val time: Instant?)
 data class Extensions(val osmandHeading: Double?, val osmandSpeed: Double?)
 data class Trkpt(
-    val lat: Double, val lon: Double, val ele: Double, val hdop: Double, val time: Instant, val extensions: Extensions
+    val lat: Double, val lon: Double, val ele: Double?, val hdop: Double?, val time: Instant?, val extensions: Extensions?
 )
 
 data class Trk(val trksegList: List<Trkseg>)
@@ -44,20 +44,28 @@ class GpxParser {
                                 val trkptNode = trkptNodeList.item(k) as Element
                                 val lat = trkptNode.getAttribute("lat").toDouble()
                                 val lon = trkptNode.getAttribute("lon").toDouble()
-                                val ele = trkptNode.getElementsByTagName("ele").item(0).textContent.toDouble()
-                                val hdop = trkptNode.getElementsByTagName("hdop").item(0).textContent.toDouble()
-                                val time = Instant.parse(trkptNode.getElementsByTagName("time").item(0).textContent)
-                                val extensions = (trkptNode.getElementsByTagName("extensions")
-                                    .item(0) as Element).let { extensionsNode ->
-                                    Extensions(
-                                        extensionsNode.getElementsByTagName("osmand:heading")
-                                            .item(0)?.textContent?.toDouble(),
-                                        extensionsNode.getElementsByTagName("osmand:speed")
-                                            .item(0)?.textContent?.toDouble()
-                                    )
+                                val ele = trkptNode.getElementsByTagName("ele").item(0)?.textContent?.toDouble()
+                                val hdop = trkptNode.getElementsByTagName("hdop").item(0)?.textContent?.toDouble()
+                                val time = trkptNode.getElementsByTagName("time").item(0)?.textContent?.let{
+                                    Instant.parse(it)
+                                }
+                                val extensionNodeList = trkptNode.getElementsByTagName("extensions")
+                                val extensions = if(extensionNodeList.length > 0){
+                                    if(extensionNodeList.length > 1) throw IllegalStateException("Too many extension nodes")
+                                    else (trkptNode.getElementsByTagName("extensions")
+                                        .item(0) as Element).let { extensionsNode ->
+                                        Extensions(
+                                            extensionsNode.getElementsByTagName("osmand:heading")
+                                                .item(0)?.textContent?.toDouble(),
+                                            extensionsNode.getElementsByTagName("osmand:speed")
+                                                .item(0)?.textContent?.toDouble()
+                                        )
+                                    }
+                                }
+                                else{
+                                    null
                                 }
                                 points.add(Trkpt(lat, lon, ele, hdop, time, extensions))
-                                println("added: ${points.last()}")
                             }
                             points
                         }
