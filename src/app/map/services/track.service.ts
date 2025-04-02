@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
 import { environment } from '../../../environments/environment';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map, Observable } from 'rxjs';
 import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
 import { TrackNoPoints } from '../trackNoPoints';
@@ -27,33 +27,22 @@ export class TrackService {
         return value;
       }
     }) as TrackNoPoints
-    return this.getTrack(latestTrack)
+    return firstValueFrom(this.getTrack(latestTrack))
   }
 
-  async getTrack(track: TrackNoPoints): Promise<L.LatLng[]> {
-    const res = await firstValueFrom(this.http.get(this.pointsUrl + "/" + track.id, { responseType: 'text' }))
-    const points = JSON.parse(res, (key, value) => {
-      if (key === "eta" || key === "etfa" || key === "timestamp") {
-        return Instant.parse(value);
-      } else {
-        return value;
-      }
-    }) as Array<GpsPoint>;
-    console.log(points);
-    const latLngs = Array<L.LatLng>()
-    points.sort((a: GpsPoint, b: GpsPoint) => {
-      if (a.timestamp.isBefore(b.timestamp)) {
-        return -1;
-      }
-      if (a.timestamp.isAfter(b.timestamp)) {
-        return 1;
-      }
-      return 0;
-    })
-    for (const c of points) {
-      latLngs.push(new L.LatLng(c.lat, c.lon))
-    }
-    return latLngs
+  getTrack(track: TrackNoPoints): Observable<L.LatLng[]> {
+    return this.http.get(this.pointsUrl + "/" + track.id, { responseType: 'text' }).pipe(map((res) => {
+      const points = JSON.parse(res, (key, value) => {
+        if (key === "eta" || key === "etfa" || key === "timestamp") {
+          return Instant.parse(value);
+        } else {
+          return value;
+        }
+      }) as Array<GpsPoint>;
+      return points.map(point => {
+        return new L.LatLng(point.lat, point.lon)
+      })
+    }))
   }
 
   async getAllTracks(): Promise<Array<TrackNoPoints>> {

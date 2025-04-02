@@ -3,7 +3,7 @@ import * as L from 'leaflet';
 import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
-import { Subscription } from 'rxjs';
+import { first, Subscription } from 'rxjs';
 import { GpsPoint } from './gps-point';
 
 
@@ -79,7 +79,7 @@ export class MapComponent {
         this.marker.addTo(this.map)
       }
     }).finally(() => {
-      this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
+      this.pointsSubscription = this.sseService.createEventSource().pipe(first()).subscribe(data => {
         console.log(data)
         line.addLatLng(new L.LatLng(data.lat, data.lon))
         this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
@@ -88,33 +88,13 @@ export class MapComponent {
     })
   }
 
-  showTrack(track: TrackNoPoints) {
-    this.showNoTrack()
-    const line = L.polyline([], { color: "red" })
-    if (this.pointsSubscription != null) {
-      this.pointsSubscription.unsubscribe()
-    }
-    this.trackService.getTrack(track).then(points => {
-      this.lines.push(line)
-      line.setLatLngs(points)
-      this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
-      this.marker.setRadius(20)
-    })
-    if (!this.map.hasLayer(line)) {
-      line.addTo(this.map)
-    }
-    if (!this.map.hasLayer(this.marker)) {
-      this.marker.addTo(this.map)
-    }
-  }
-
   showTracks(tracks: TrackNoPoints[]) {
     this.showNoTrack()
     if (this.pointsSubscription != null) {
       this.pointsSubscription.unsubscribe()
     }
     tracks.forEach(track => {
-      this.trackService.getTrack(track).then(points => {
+      this.trackService.getTrack(track).subscribe(points => {
         const line = L.polyline([], { color: "red" })
         this.lines.push(line)
         line.setLatLngs(points)
