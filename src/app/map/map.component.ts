@@ -27,7 +27,8 @@ export class MapComponent {
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-  private lines: L.Polyline[] = new Array<L.Polyline>()
+  private lines: Map<number, L.Polyline> = new Map<number, L.Polyline>()
+  private latestLine: L.Polyline = L.polyline([], { color: "red" })
   private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
 
   private pointsSubscription: Subscription | null = null
@@ -65,15 +66,12 @@ export class MapComponent {
 
   subscribeLatestTrack() {
     this.showNoTrack()
-    const line = L.polyline([], { color: "red" })
     this.trackService.getLatestTrack().then(points => {
-      const line = L.polyline([], { color: "red" })
-      this.lines.push(line)
-      line.setLatLngs(points)
-      this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
+      this.latestLine.setLatLngs(points)
+      this.marker.setLatLng(this.latestLine.getLatLngs()[this.latestLine.getLatLngs().length - 1] as L.LatLng)
       this.marker.setRadius(20)
-      if (!this.map.hasLayer(line)) {
-        line.addTo(this.map)
+      if (!this.map.hasLayer(this.latestLine)) {
+        this.latestLine.addTo(this.map)
       }
       if (!this.map.hasLayer(this.marker)) {
         this.marker.addTo(this.map)
@@ -81,9 +79,9 @@ export class MapComponent {
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().pipe(first()).subscribe(data => {
         console.log(data)
-        line.addLatLng(new L.LatLng(data.lat, data.lon))
-        this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
-        line.setLatLngs
+        this.latestLine.addLatLng(new L.LatLng(data.lat, data.lon))
+        this.marker.setLatLng(this.latestLine.getLatLngs()[this.latestLine.getLatLngs().length - 1] as L.LatLng)
+        this.latestLine.setLatLngs
       })
     })
   }
@@ -94,14 +92,18 @@ export class MapComponent {
       this.pointsSubscription.unsubscribe()
     }
     tracks.forEach(track => {
-      this.trackService.getTrack(track).subscribe(points => {
+      const line = this.lines.get(track.id)
+      if (line === undefined) {
         const line = L.polyline([], { color: "red" })
-        this.lines.push(line)
-        line.setLatLngs(points)
+        this.lines.set(track.id, line)
+        this.trackService.getTrack(track).pipe(first()).subscribe(points => {
+          line.setLatLngs(points)
+          line.addTo(this.map)
+        })
+      }
+      else {
         line.addTo(this.map)
-        this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
-        this.marker.setRadius(20)
-      })
+      }
     })
   }
 
@@ -109,7 +111,7 @@ export class MapComponent {
     this.lines.forEach(line => {
       line.removeFrom(this.map)
     })
-    this.lines = new Array<L.Polyline>()
+    this.latestLine.removeFrom(this.map)
     this.marker.removeFrom(this.map)
   }
 
