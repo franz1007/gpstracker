@@ -14,8 +14,8 @@ import { GpsPoint } from './gps-point';
   styleUrl: './map.component.css'
 })
 
-export class MapComponent  {
-  showTrackMode: ModelSignal<string | TrackNoPoints | null> = model.required<string | TrackNoPoints | null>();
+export class MapComponent {
+  showTrackMode: ModelSignal<string | TrackNoPoints[] | null> = model.required<string | TrackNoPoints[] | null>();
 
   private map: L.Map = L.map('map', {
     center: [49.65254208294224, 10.635266687654777],
@@ -27,7 +27,7 @@ export class MapComponent  {
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-  private line: L.Polyline = L.polyline([], { color: "red" })
+  private lines: L.Polyline[] = new Array<L.Polyline>()
   private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
 
   private pointsSubscription: Subscription | null = null
@@ -35,7 +35,9 @@ export class MapComponent  {
   constructor(private trackService: TrackService, private sseService: SsePointService) {
     L.control.zoom({ position: 'topright' }).addTo(this.map)
     this.tiles.addTo(this.map)
-    this.line.addTo(this.map)
+    this.lines.forEach(line => {
+      line.removeFrom(this.map)
+    })
     this.marker.addTo(this.map)
 
     effect(() => {
@@ -55,19 +57,23 @@ export class MapComponent  {
           this.showNoTrack()
         }
         else {
-          this.showTrack(mode)
+          this.showTracks(mode)
         }
       }
     });
   }
 
   subscribeLatestTrack() {
+    this.showNoTrack()
+    const line = L.polyline([], { color: "red" })
     this.trackService.getLatestTrack().then(points => {
-      this.line.setLatLngs(points)
-      this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+      const line = L.polyline([], { color: "red" })
+      this.lines.push(line)
+      line.setLatLngs(points)
+      this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
       this.marker.setRadius(20)
-      if (!this.map.hasLayer(this.line)) {
-        this.line.addTo(this.map)
+      if (!this.map.hasLayer(line)) {
+        line.addTo(this.map)
       }
       if (!this.map.hasLayer(this.marker)) {
         this.marker.addTo(this.map)
@@ -75,32 +81,55 @@ export class MapComponent  {
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
         console.log(data)
-        this.line.addLatLng(new L.LatLng(data.lat, data.lon))
-        this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
-        this.line.setLatLngs
+        line.addLatLng(new L.LatLng(data.lat, data.lon))
+        this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
+        line.setLatLngs
       })
     })
   }
 
   showTrack(track: TrackNoPoints) {
+    this.showNoTrack()
+    const line = L.polyline([], { color: "red" })
     if (this.pointsSubscription != null) {
       this.pointsSubscription.unsubscribe()
     }
     this.trackService.getTrack(track).then(points => {
-      this.line.setLatLngs(points)
-      this.marker.setLatLng(this.line.getLatLngs()[this.line.getLatLngs().length - 1] as L.LatLng)
+      this.lines.push(line)
+      line.setLatLngs(points)
+      this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
       this.marker.setRadius(20)
     })
-    if (!this.map.hasLayer(this.line)) {
-      this.line.addTo(this.map)
+    if (!this.map.hasLayer(line)) {
+      line.addTo(this.map)
     }
     if (!this.map.hasLayer(this.marker)) {
       this.marker.addTo(this.map)
     }
   }
 
+  showTracks(tracks: TrackNoPoints[]) {
+    this.showNoTrack()
+    if (this.pointsSubscription != null) {
+      this.pointsSubscription.unsubscribe()
+    }
+    tracks.forEach(track => {
+      this.trackService.getTrack(track).then(points => {
+        const line = L.polyline([], { color: "red" })
+        this.lines.push(line)
+        line.setLatLngs(points)
+        line.addTo(this.map)
+        this.marker.setLatLng(line.getLatLngs()[line.getLatLngs().length - 1] as L.LatLng)
+        this.marker.setRadius(20)
+      })
+    })
+  }
+
   showNoTrack() {
-    this.line.removeFrom(this.map)
+    this.lines.forEach(line => {
+      line.removeFrom(this.map)
+    })
+    this.lines = new Array<L.Polyline>()
     this.marker.removeFrom(this.map)
   }
 
