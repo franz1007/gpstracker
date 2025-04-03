@@ -19,19 +19,15 @@ export class TrackService {
   constructor(private http: HttpClient) { }
 
   async getLatestTrack(): Promise<L.LatLng[]> {
-    const latestTrackString = await firstValueFrom(this.http.get(this.latestTrackUrl, { responseType: 'text' }))
-    const latestTrack = JSON.parse(latestTrackString, (key, value) => {
-      if (key === "eta" || key === "etfa" || key === "timestamp") {
-        return Instant.parse(value);
-      } else {
-        return value;
-      }
-    }) as TrackNoPoints
-    return firstValueFrom(this.getTrack(latestTrack))
+    return firstValueFrom(this.getTrackFromUrl("latest"))
   }
 
   getTrack(track: TrackNoPoints): Observable<L.LatLng[]> {
-    return this.http.get(this.pointsUrl + "/" + track.id, { responseType: 'text' }).pipe(map((res) => {
+    return this.getTrackFromUrl(track.id.toString())
+  }
+
+  getTrackFromUrl(id: string): Observable<L.LatLng[]> {
+    return this.http.get(this.pointsUrl + "/" + id, { responseType: 'text' }).pipe(map((res) => {
       const points = JSON.parse(res, (key, value) => {
         if (key === "eta" || key === "etfa" || key === "timestamp") {
           return Instant.parse(value);

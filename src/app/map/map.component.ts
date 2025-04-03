@@ -77,7 +77,7 @@ export class MapComponent {
         this.marker.addTo(this.map)
       }
     }).finally(() => {
-      this.pointsSubscription = this.sseService.createEventSource().pipe(first()).subscribe(data => {
+      this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
         console.log(data)
         this.latestLine.addLatLng(new L.LatLng(data.lat, data.lon))
         this.marker.setLatLng(this.latestLine.getLatLngs()[this.latestLine.getLatLngs().length - 1] as L.LatLng)
