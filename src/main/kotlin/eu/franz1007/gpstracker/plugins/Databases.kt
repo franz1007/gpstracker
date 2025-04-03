@@ -108,10 +108,16 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             connections.forEach {
                 it.sendSerialized(point)
             }
-            val event = ServerSentEvent(Json.encodeToString(point), "newPoint", id.toString(), 1_000, null)
+            val event = ServerSentEvent(Json.encodeToString(point), id = id.toString())
             sseConnections.forEach {
-                it.send(event)
+                println("sendingSSE")
+                try {
+                    it.send(event)
+                } catch (e: IOException) {
+                    sseConnections.remove(it)
+                }
             }
+            call.response.status(HttpStatusCode.OK)
         }
         route("/api") {
             route("/points") {
@@ -119,13 +125,22 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                     call.respond(gpsPointService.readAllPoints())
                 }
                 get("/byTrack/{trackId}") {
-                    call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
-                    val trackId = call.parameters["trackId"]?.toLong()
-                    if (trackId == null) {
-                        call.respond(HttpStatusCode.BadRequest)
-                        return@get
+                    when (val trackId = call.parameters["trackId"]) {
+                        "latest" -> {
+                            val track = gpsPointService.readLatestTrack()
+                            if (track == null) {
+                                call.respond("")
+                            } else {
+                                call.respond(gpsPointService.pointsByTrack(track.id))
+                            }
+                        }
+
+                        null -> call.respond(HttpStatusCode.BadRequest)
+                        else -> {
+                            call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
+                            call.respond(gpsPointService.pointsByTrack(trackId.toLong()))
+                        }
                     }
-                    call.respond(gpsPointService.pointsByTrack(trackId))
                 }
             }
             route("/tracks") {
@@ -152,14 +167,15 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                 }
             }
             sse("/sse") {
+                println("Adding sse connection")
                 sseConnections += this
                 while (true) {
-                    delay(10000)
                     try {
                         send(ServerSentEvent("ping", "ping", null, 1_000, null))
                     } catch (e: IOException) {
                         sseConnections.remove(this)
                     }
+                    delay(10000)
                 }
             }
         }
@@ -190,24 +206,24 @@ fun Application.configureDatabases(config: ApplicationConfig) {
 
 
         /*
-        run{
-            val parser = GpxParser()
-            val tracks = Files.walk(Path("tracks")).filter { it.isRegularFile() }.map{
-                TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
-            }.toList()
-            tracks.forEach{
-                gpsPointService.importTrack(it)
-            }
-        }
+                run {
+                    val parser = GpxParser()
+                    val tracks = Files.walk(Path("tracks")).filter { it.isRegularFile() }.map {
+                        TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
+                    }.toList()
+                    tracks.forEach {
+                        gpsPointService.importTrack(it)
+                    }
+                }
 
-        runBlocking {
-            initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
-        }
-        runBlocking {
-            initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
-        }
+                        runBlocking {
+                            initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
+                        }
+                        runBlocking {
+                            initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
+                        }
 
-         */
+                         */
     }
 }
 
