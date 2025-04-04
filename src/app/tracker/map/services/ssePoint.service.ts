@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { environment } from "../../../environments/environment";
+import { environment } from "../../../../environments/environment";
 import { Injectable } from "@angular/core";
 import { GpsPoint } from "../gps-point";
 

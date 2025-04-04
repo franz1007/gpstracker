@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal } from '@angular/core';
+import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal, OnDestroy, OnInit } from '@angular/core';
 import * as L from 'leaflet';
 import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
@@ -14,14 +14,10 @@ import { GpsPoint } from './gps-point';
   styleUrl: './map.component.css'
 })
 
-export class MapComponent {
+export class MapComponent implements OnDestroy, OnInit {
   showTrackMode: ModelSignal<string | TrackNoPoints[] | null> = model.required<string | TrackNoPoints[] | null>();
 
-  private map: L.Map = L.map('map', {
-    center: [49.65254208294224, 10.635266687654777],
-    zoom: 7,
-    zoomControl: false,
-  });
+  private map!: L.Map
   private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 20,
     minZoom: 3,
@@ -34,13 +30,6 @@ export class MapComponent {
   private pointsSubscription: Subscription | null = null
 
   constructor(private trackService: TrackService, private sseService: SsePointService) {
-    L.control.zoom({ position: 'topright' }).addTo(this.map)
-    this.tiles.addTo(this.map)
-    this.lines.forEach(line => {
-      line.removeFrom(this.map)
-    })
-    this.marker.addTo(this.map)
-
     effect(() => {
       const mode = this.showTrackMode()
       console.log(`showTrackMode changed: ${mode}`);
@@ -63,6 +52,29 @@ export class MapComponent {
       }
     });
   }
+
+  ngOnInit() {
+    this.map = L.map('map', {
+      center: [49.65254208294224, 10.635266687654777],
+      zoom: 7,
+      zoomControl: false,
+    });
+    L.control.zoom({ position: 'topright' }).addTo(this.map)
+    this.tiles.addTo(this.map)
+    this.lines.forEach(line => {
+      line.removeFrom(this.map)
+    })
+    this.marker.addTo(this.map)
+  }
+
+  ngOnDestroy() {
+    // If this directive is destroyed, the map is too
+    if (null != this.map) {
+      this.map.remove();
+    }
+  }
+
+
 
   subscribeLatestTrack() {
     this.showNoTrack()
