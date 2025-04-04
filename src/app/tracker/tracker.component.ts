@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal, linkedSignal, OnDestroy, OnInit } from '@angular/core';
+import { Component, signal, WritableSignal, linkedSignal, OnDestroy, OnInit, resource, computed, Signal, effect } from '@angular/core';
 import { MapComponent } from './map/map.component';
 import { DrawerModule } from 'primeng/drawer'
 import { ButtonModule } from 'primeng/button'
@@ -8,6 +8,7 @@ import { TreeNode, } from 'primeng/api';
 import { TrackNoPoints } from './map/trackNoPoints';
 import { TrackService } from './map/services/track.service';
 import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
+import { httpResource } from '@angular/common/http';
 
 @Component({
   selector: 'app-tracker',
@@ -18,7 +19,6 @@ import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
 
 export class TrackerComponent {
   title = 'angular-leaflet-example';
-  files!: TreeNode[];
   isExpanding = false;
   selection: WritableSignal<any> = signal(null)
   mapTrackMode: WritableSignal<string | TrackNoPoints[] | null> = linkedSignal<string | TrackNoPoints[] | null>(() => {
@@ -54,35 +54,54 @@ export class TrackerComponent {
       return null
     }
   })
-  private tracks!: Array<TrackNoPoints>
-
+  private first: boolean = true
   constructor(private trackService: TrackService) {
+    effect(() => {
+      console.log("Effect")
+      console.log(this.trackResource.status())
+      console.log(this.trackResource.value())
+      console.log(this.trackResource.isLoading())
+      const value = this.trackResource.value()
+      this.trackResource.status
+      console.log("Resource value")
+      console.log(value)
+      if (value !== undefined) {
+        const sorted = value.sort((a, b) => {
+          a.startTimestamp.compareTo(b.endTimestamp)
+          return a.startTimestamp.compareTo(b.startTimestamp)
+        });
+        console.log("Received Tracks")
+        console.log(sorted)
+        this.tracks = this.generateTreeNodesData(sorted)
+        if(this.first){
+          this.first = false;
+          this.selection.set(this.tracks[0])
+        }
+      }
+    })
 
   }
+
+  private trackResource = resource(
+    {
+      loader: ({ request, abortSignal }): Promise<Array<TrackNoPoints>> => {
+        console.log("trying to load resource")
+        const promise = this.trackService.getAllTracks(abortSignal);
+        return promise
+      },
+    }
+  );
+  tracks!: TreeNode[]
 
   toggleSideBar() {
     this.isExpanding = !this.isExpanding;
   }
-  ngOnInit() {
-    this.trackService.getAllTracks().then(tracks => {
 
-      this.tracks = tracks.sort((a, b) => {
-        a.startTimestamp.compareTo(b.endTimestamp)
-        return a.startTimestamp.compareTo(b.startTimestamp)
-      });
-      console.log("Received Tracks")
-      console.log(this.tracks)
-    }).then(() => {
-      this.files = this.getTreeNodesData()
-      this.selection.set(this.files[0])
-    })
-  }
-
-  getTreeNodesData() {
+  generateTreeNodesData(tracks: TrackNoPoints[]): TreeNode[] {
 
     const trackMap = new Map<string, Array<TrackNoPoints>>()
     const formatter = DateTimeFormatter.ofPattern('yyyy-MM') // 4/28/2018
-    this.tracks.forEach(track => {
+    tracks.forEach(track => {
       const month = LocalDateTime.ofInstant(track.startTimestamp).format(formatter)
       const array = trackMap.get(month)
       if (array === undefined) {
@@ -127,7 +146,7 @@ export class TrackerComponent {
       {
         key: '1',
         label: 'Tracks',
-        data: this.tracks,
+        data: tracks,
         icon: 'pi pi-fw pi-folder-plus',
         children: nodes
       },
