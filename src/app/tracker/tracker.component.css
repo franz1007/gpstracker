@@ -1,0 +1,42 @@
+app-map {
+    height: 98vh;
+    width: 100%;
+  }
+  
+  .container {
+    height: 98vh;
+    display: flex;
+  }
+  
+  .container .main-body {
+    width: 100%;
+    position: relative;
+  }
+  
+  .container aside {
+    width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: all 0.5s;
+  }
+  
+  .container aside.expanding {
+    width: 30vh
+  }
+  
+  #map {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  #overlaybutton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10000;
+  }
+  
+  #overlaybutton.expanding {
+    display: none;
+  }
