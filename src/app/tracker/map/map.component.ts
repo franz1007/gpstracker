@@ -4,7 +4,6 @@ import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { first, Subscription } from 'rxjs';
-import { GpsPoint } from './gps-point';
 
 
 @Component({

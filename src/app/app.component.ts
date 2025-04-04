@@ -1,11 +1,15 @@
 import { Component } from '@angular/core';
-import { TrackerComponent } from "./tracker/tracker.component";
+import { RouterLink, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   template: `
-    <app-tracker>
+    <nav>
+      <a routerLink="/tracker">Tracker</a>
+    </nav>
+    <router-outlet />
   `,
-  imports: [TrackerComponent],
+  imports: [RouterOutlet, RouterLink],
 })
-export class AppComponent { }
+export class AppComponent { 
+}
