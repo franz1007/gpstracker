@@ -1,7 +1,7 @@
 <section class="container">
     <aside [ngClass]="{'expanding': isExpanding}" [ngStyle]="{backgroundColor:'var(--p-content-background)'}">
         <p-button id="sidebarbutton" (onClick)="toggleSideBar()" icon="pi pi-bars" />
-        <p-tree [value]="files" selectionMode="single" [(selection)]="selection" />
+        <p-tree [value]="tracks" selectionMode="single" [(selection)]="selection" />
     </aside>
     <div class="main-body">
         <p-button [ngClass]="{'expanding': isExpanding}" id="overlaybutton" (onClick)="toggleSideBar()" icon="pi pi-bars" />
