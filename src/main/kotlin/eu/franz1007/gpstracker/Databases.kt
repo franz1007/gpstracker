@@ -105,14 +105,9 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                         if (track == null) {
                             call.respond(HttpStatusCode.NotFound)
                         } else {
-                            val withMetadata = track.calculateMetadata()
+                            val withMetadata = track.calculateMetadata().onlyMetadata()
                             call.respond(
-                                TrackOnlyMetadata(
-                                    withMetadata.id,
-                                    withMetadata.startTimestamp,
-                                    withMetadata.endTimesamp,
-                                    withMetadata.distanceMeters
-                                )
+                                withMetadata
                             )
                         }
                     }
