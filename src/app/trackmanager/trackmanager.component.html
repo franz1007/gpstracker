@@ -1,0 +1,18 @@
+<p-table [value]="tracks" [tableStyle]="{ 'min-width': '50rem' }">
+    <ng-template #header>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+        </tr>
+    </ng-template>
+    <ng-template #body let-track>
+        <tr>
+            <td>{{ track.code }}</td>
+            <td>{{ track.name }}</td>
+            <td>{{ track.category }}</td>
+            <td>{{ track.quantity }}</td>
+        </tr>
+    </ng-template>
+</p-table>
