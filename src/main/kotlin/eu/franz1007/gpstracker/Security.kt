@@ -1,4 +1,4 @@
-package eu.franz1007.gpstracker.plugins
+package eu.franz1007.gpstracker
 
 import io.ktor.server.application.*
 import io.ktor.server.response.*
