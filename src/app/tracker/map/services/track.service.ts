@@ -5,7 +5,8 @@ import { environment } from '../../../../environments/environment';
 import { firstValueFrom, map, Observable } from 'rxjs';
 import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
-import { TrackNoPoints } from '../trackNoPoints';
+import { TrackNoPoints, TrackWithMetadata } from '../trackNoPoints';
+import { JsonPipe } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -14,6 +15,7 @@ export class TrackService {
   pointsUrl: string = environment.apiUrl + "/api/points/byTrack"
   latestTrackUrl: string = environment.apiUrl + "/api/tracks/latest"
   tracksUrl: string = environment.apiUrl + "/api/tracks"
+  trackMetadataUrl: string = environment.apiUrl + "/api/tracks/withMetadata"
 
 
   constructor(private http: HttpClient) { }
@@ -42,7 +44,7 @@ export class TrackService {
   }
 
   async getAllTracks(abortSignal: AbortSignal): Promise<Array<TrackNoPoints>> {
-    const tracksString = await fetch(this.tracksUrl, {signal: abortSignal})
+    const tracksString = await fetch(this.tracksUrl, { signal: abortSignal })
     const text = await tracksString.text()
     const tracks = JSON.parse(text, (key, value) => {
       if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
@@ -53,6 +55,41 @@ export class TrackService {
     }) as Array<TrackNoPoints>
     return tracks.map((track) => {
       return new TrackNoPoints(track.id, track.startTimestamp, track.endTimestamp)
+    })
+  }
+
+  async getAllTracksWithMetadata(abortSignal: AbortSignal): Promise<Array<TrackWithMetadata>> {
+    const tracksString = await fetch(this.tracksUrl, { signal: abortSignal })
+    const text = await tracksString.text()
+    const tracks = JSON.parse(text, (key, value) => {
+      if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as Array<TrackNoPoints>
+    const sorted = tracks.sort((a, b) => {
+      a.startTimestamp.compareTo(b.endTimestamp)
+      return a.startTimestamp.compareTo(b.startTimestamp)
+    });
+    return sorted.map((track) => {
+      const trackObject = new TrackWithMetadata(track.id, track.startTimestamp, track.endTimestamp, 0)
+      fetch(this.trackMetadataUrl + "/" + trackObject.id, {signal: abortSignal}).then(response => {
+        response.text().then(text => {
+          const track = JSON.parse(text, (key, value) => {
+            if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+              return Instant.parse(value);
+            } else {
+              return value;
+            }
+          }) as TrackWithMetadata
+          trackObject.distanceMeters = track.distanceMeters
+          trackObject.averageSpeedKph = track.averageSpeedKph
+          console.log("received distances")
+        })
+        
+      })
+      return trackObject
     })
   }
 }
