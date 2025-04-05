@@ -18,7 +18,8 @@ data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Ins
                 acc.copy(second = next)
             }
         }
-        return TrackWIthMetadata(id, startTimestamp, endTimesamp, points, distanceMeters.toInt())
+        val averageSpeedKph = (distanceMeters / endTimesamp.minus(startTimestamp).inWholeSeconds) * 3.6
+        return TrackWIthMetadata(id, startTimestamp, endTimesamp, points, distanceMeters.toInt(), averageSpeedKph)
     }
 }
 
@@ -28,15 +29,21 @@ data class TrackWIthMetadata(
     val startTimestamp: Instant,
     val endTimesamp: Instant,
     val points: List<GpsPoint>,
-    val distanceMeters: Int
-)
+    val distanceMeters: Int,
+    val averageSpeedKph: Double
+) {
+    fun onlyMetadata(): TrackOnlyMetadata {
+        return TrackOnlyMetadata(id, startTimestamp, endTimesamp, distanceMeters, averageSpeedKph)
+    }
+}
 
 @Serializable
 data class TrackOnlyMetadata(
     val id: Long,
     val startTimestamp: Instant,
     val endTimestamp: Instant,
-    val distanceMeters: Int
+    val distanceMeters: Int,
+    val averageSpeedKph: Double
 )
 
 @Serializable
