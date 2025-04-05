@@ -1,19 +1,14 @@
-package eu.franz1007.gpstracker.plugins
+package eu.franz1007.gpstracker
 
+import eu.franz1007.gpstracker.database.GpsPointService
 import eu.franz1007.gpstracker.gpxtool.GpxParser
-import eu.franz1007.gpstracker.model.GpsPointNoId
-import eu.franz1007.gpstracker.model.TrackNoId
-import eu.franz1007.gpstracker.model.TrackNoPoints
-import eu.franz1007.gpstracker.plugins.database.ExposedUser
-import eu.franz1007.gpstracker.plugins.database.GpsPointService
-import eu.franz1007.gpstracker.plugins.database.UserService
+import eu.franz1007.gpstracker.model.*
+import eu.franz1007.gpstracker.util.SloppyMath
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
-import io.ktor.server.config.*
 import io.ktor.server.plugins.*
 import io.ktor.server.plugins.cachingheaders.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
@@ -28,65 +23,19 @@ import kotlinx.datetime.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Database
 import java.nio.file.Files
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
-import kotlin.io.path.listDirectoryEntries
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+import kotlin.time.measureTime
 import kotlin.time.toDuration
 
-fun Application.configureDatabases(config: ApplicationConfig) {
+fun Application.configureDatabases(gpsPointService: GpsPointService) {
     val connections = Collections.synchronizedSet<DefaultWebSocketServerSession>(LinkedHashSet())
     val sseConnections = ConcurrentSet<ServerSSESession>()
-    val database = Database.connect(
-        url = config.property("storage.url").getString(),
-        user = config.property("storage.user").getString(),
-        driver = config.property("storage.driver").getString(),
-        password = config.property("storage.password").getString(),
-    )
-    val userService = UserService(database)
-    val gpsPointService = GpsPointService(database)
-    routing {
-        // Create user
-        post("/users") {
-            val user = call.receive<ExposedUser>()
-            val id = userService.create(user)
-            call.respond(HttpStatusCode.Created, id)
-        }
-
-        // Read user
-        get("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = userService.read(id)
-            if (user != null) {
-                call.respond(HttpStatusCode.OK, user)
-            } else {
-                call.respond(HttpStatusCode.NotFound)
-            }
-        }
-
-        // Update user
-        put("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.OK)
-        }
-
-        // Delete user
-        delete("/users/{id}") {
-            val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
-            call.respond(HttpStatusCode.OK)
-        }
-    }
     routing {
         get("/osmand") {
             val timestamp = call.parameters["timestamp"]?.toLong()?.let { it1 -> Instant.fromEpochMilliseconds(it1) }
@@ -147,6 +96,27 @@ fun Application.configureDatabases(config: ApplicationConfig) {
                 get {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
+                get("/withMetadata/{trackId}") {
+                    val trackId = call.parameters["trackId"]
+                    if (trackId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Path parameter id required")
+                    } else {
+                        val track = gpsPointService.readTrack(trackId.toLong())
+                        if (track == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                        } else {
+                            val withMetadata = track.calculateMetadata()
+                            call.respond(
+                                TrackOnlyMetadata(
+                                    withMetadata.id,
+                                    withMetadata.startTimestamp,
+                                    withMetadata.endTimesamp,
+                                    withMetadata.distanceMeters
+                                )
+                            )
+                        }
+                    }
+                }
                 get("/latest") {
                     call.respondNullable(gpsPointService.readLatestTrack())
                 }
@@ -204,26 +174,36 @@ fun Application.configureDatabases(config: ApplicationConfig) {
             altitude = 520.0
         )
 
-
-        /*
-                run {
-                    val parser = GpxParser()
-                    val tracks = Files.walk(Path("tracks")).filter { it.isRegularFile() }.map {
-                        TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
-                    }.toList()
-                    tracks.forEach {
-                        gpsPointService.importTrack(it)
-                    }
+        run {
+            runBlocking {
+                val parser = GpxParser()
+                val tracks = Files.walk(Path("September2024")).filter { it.isRegularFile() }.map {
+                    TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
+                }.toList()
+                tracks.forEach {
+                    gpsPointService.importTrack(it)
                 }
-
-                        runBlocking {
-                            initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
+            }
+        }/*
+                        run {
+                            val parser = GpxParser()
+                            val tracks = Files.walk(Path("September2024")).filter { it.isRegularFile() }.map {
+                                TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
+                            }.toList()
+                            tracks.forEach {
+                                gpsPointService.importTrack(it)
+                            }
                         }
-                        runBlocking {
-                            initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
-                        }
 
-                         */
+
+                                runBlocking {
+                                    initPoints(pointMunich, gpsPointService, connections, sseConnections, 10.milliseconds, 3.hours)
+                                }
+                                runBlocking {
+                                    initPoints(pointSalzburg, gpsPointService, connections, sseConnections, 1.seconds, Duration.ZERO)
+                                }
+
+                                 */
     }
 }
 

@@ -1,10 +1,43 @@
 package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.Gpx
+import eu.franz1007.gpstracker.util.SloppyMath
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlin.Triple
 
-data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Instant, val points: List<GpsPoint>)
+@Serializable
+data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Instant, val points: List<GpsPoint>) {
+    fun calculateMetadata(): TrackWIthMetadata {
+        val (distanceMeters, _) = points.fold(Pair<Double, GpsPoint?>(0.0, null)) { acc, next ->
+            val last = acc.second
+            if (last != null) {
+                val distance = SloppyMath.haversinMeters(last.lat, last.lon, next.lat, next.lon)
+                acc.copy(first = acc.first + distance, second = next)
+            } else {
+                acc.copy(second = next)
+            }
+        }
+        return TrackWIthMetadata(id, startTimestamp, endTimesamp, points, distanceMeters.toInt())
+    }
+}
+
+@Serializable
+data class TrackWIthMetadata(
+    val id: Long,
+    val startTimestamp: Instant,
+    val endTimesamp: Instant,
+    val points: List<GpsPoint>,
+    val distanceMeters: Int
+)
+
+@Serializable
+data class TrackOnlyMetadata(
+    val id: Long,
+    val startTimestamp: Instant,
+    val endTimestamp: Instant,
+    val distanceMeters: Int
+)
 
 @Serializable
 data class TrackNoPoints(
