@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal, linkedSignal, OnDestroy, OnInit, resource, computed, Signal, effect } from '@angular/core';
+import { Component, signal, WritableSignal, linkedSignal, resource, effect } from '@angular/core';
 import { MapComponent } from './map/map.component';
 import { DrawerModule } from 'primeng/drawer'
 import { ButtonModule } from 'primeng/button'
@@ -8,7 +8,6 @@ import { TreeNode, } from 'primeng/api';
 import { TrackNoPoints } from './map/trackNoPoints';
 import { TrackService } from './map/services/track.service';
 import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
-import { httpResource } from '@angular/common/http';
 
 @Component({
   selector: 'app-tracker',
@@ -73,7 +72,7 @@ export class TrackerComponent {
         console.log("Received Tracks")
         console.log(sorted)
         this.tracks = this.generateTreeNodesData(sorted)
-        if(this.first){
+        if (this.first) {
           this.first = false;
           this.selection.set(this.tracks[0])
         }
@@ -99,39 +98,62 @@ export class TrackerComponent {
 
   generateTreeNodesData(tracks: TrackNoPoints[]): TreeNode[] {
 
-    const trackMap = new Map<string, Array<TrackNoPoints>>()
+    const categoryMap = new Map<string, Map<string, Array<TrackNoPoints>>>()
     const formatter = DateTimeFormatter.ofPattern('yyyy-MM') // 4/28/2018
+
     tracks.forEach(track => {
       const month = LocalDateTime.ofInstant(track.startTimestamp).format(formatter)
-      const array = trackMap.get(month)
-      if (array === undefined) {
-        trackMap.set(month, new Array(track))
+      const trackMap = categoryMap.get(track.category)
+      if (trackMap === undefined) {
+        const map = new Map<string, Array<TrackNoPoints>>()
+        map.set(month, new Array(track))
+        categoryMap.set(track.category, map)
       }
       else {
-        array.push(track)
+        const array = trackMap.get(month)
+        if (array === undefined) {
+          trackMap.set(month, new Array(track))
+        }
+        else {
+          array.push(track)
+        }
       }
     })
 
-    const nodes: Array<TreeNode> = new Array()
 
-    var index = 0
-
-    for (const entry of trackMap) {
-      const children = entry[1].map((track, j) => {
-        return {
-          key: '1-' + index.toString() + "-" + j,
-          label: track.startTimestamp.toString(),
-          data: track,
-          icon: 'pi pi-fw pi-cog',
-        }
-      })
-      nodes.push(
+    const categoryNodes = new Array<TreeNode>()
+    let categoryIndex = 1
+    for (const categoryEntry of categoryMap) {
+      const category = categoryEntry[0]
+      const monthMap = categoryEntry[1]
+      const monthNodes = new Array<TreeNode>()
+      let monthIndex = 1
+      for (const monthEntry of monthMap) {
+        const trackNodes = monthEntry[1].map((track, trackIndex) => {
+          return {
+            key: '1-' + categoryIndex + "-" + monthIndex + "-" + trackIndex,
+            label: track.startTimestamp.toString(),
+            data: track,
+            icon: 'pi pi-fw pi-cog',
+          }
+        })
+        monthNodes.push(
+          {
+            key: '1-' + categoryIndex + "-" + monthIndex++,
+            label: monthEntry[0],
+            data: monthEntry[1],
+            icon: 'pi pi-fw pi-cog',
+            children: trackNodes
+          }
+        )
+      }
+      categoryNodes.push(
         {
-          key: '1-' + (index++),
-          label: entry[0],
-          data: entry[1],
+          key: '1-' + categoryIndex++,
+          label: category,
+          data: Array.from(categoryEntry[1].values()).flat(),
           icon: 'pi pi-fw pi-cog',
-          children: children
+          children: monthNodes
         }
       )
     }
@@ -148,7 +170,7 @@ export class TrackerComponent {
         label: 'Tracks',
         data: tracks,
         icon: 'pi pi-fw pi-folder-plus',
-        children: nodes
+        children: categoryNodes
       },
 
     ];
