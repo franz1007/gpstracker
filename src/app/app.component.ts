@@ -38,14 +38,9 @@ export class AppComponent {
   constructor(private router: Router) { }
   items = [
     {
-      label: 'Home',
+      label: 'Map',
       icon: 'pi pi-home',
       route: '/'
-    },
-    {
-      label: 'Map',
-      icon: 'pi pi-palette',
-      route: '/tracker'
     },
     {
       label: 'Trackmanager',

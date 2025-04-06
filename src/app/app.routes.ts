@@ -5,7 +5,7 @@ import { TrackmanagerComponent } from './trackmanager/trackmanager.component';
 
 export const routes: Routes = [
   {
-    path: 'tracker',
+    path: '',
     title: 'Tracker',
     component: TrackerComponent,
   },
