@@ -1,6 +1,7 @@
 package eu.franz1007.gpstracker.database
 
 import eu.franz1007.gpstracker.model.*
+import eu.franz1007.gpstracker.uitl.Quadruple
 import eu.franz1007.gpstracker.util.SloppyMath
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
@@ -15,6 +16,7 @@ class GpsPointService(database: Database) {
         val id = long("id").autoIncrement()
         val startTimestamp = timestamp("startTimestamp")
         val endTimestamp = timestamp("endTimestamp")
+        val category = enumeration<TRACK_CATEGORY>("category")
         override val primaryKey = PrimaryKey(id)
     }
 
@@ -57,21 +59,15 @@ class GpsPointService(database: Database) {
                     .map {
                         Pair(it[Tracks.id], it[Tracks.endTimestamp])
                     }.singleOrNull()
-            val currentTrackId = if (latest == null) {
+            val currentTrackId = if (latest == null || point.timestamp.minus(latest.second).inWholeMinutes > 60) {
                 Tracks.insert {
                     it[startTimestamp] = point.timestamp
                     it[endTimestamp] = point.timestamp
+                    it[category] = TRACK_CATEGORY.UNCATEGORIZED
                 }[Tracks.id]
             } else {
-                // Create new Track if latest track is older than an hour
-                if (point.timestamp.minus(latest.second).inWholeMinutes > 60) {
-                    Tracks.insert {
-                        it[startTimestamp] = point.timestamp
-                        it[endTimestamp] = point.timestamp
-                    }[Tracks.id]
-                } else {
-                    latest.first
-                }
+                latest.first
+
             }
 
             val newPositionId = GpsPositions.insert {
@@ -99,11 +95,20 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun categorizeTrack(trackId: Long, newCategory: TRACK_CATEGORY) {
+        dbQuery {
+            Tracks.update({ Tracks.id eq trackId }) {
+                it[category] = newCategory
+            }
+        }
+    }
+
     suspend fun importTrack(track: TrackNoId): Long {
         return dbQuery {
             val id = Tracks.insert {
                 it[startTimestamp] = track.startTimestamp
                 it[endTimestamp] = track.endTimestamp
+                it[category] = track.category
             }[Tracks.id]
             track.points.forEach { point ->
                 val newPositionId = GpsPositions.insert {
@@ -194,25 +199,29 @@ class GpsPointService(database: Database) {
     suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
         return dbQuery {
             Tracks.selectAll().map {
-                TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp])
+                TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
             }
         }
     }
 
     suspend fun readLatestTrack(): TrackNoPoints? {
         return dbQuery {
-            Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1)
-                .map { TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp]) }.singleOrNull()
+            Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
+                TrackNoPoints(
+                    it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                )
+            }.singleOrNull()
         }
     }
 
+
     suspend fun readTrack(id: Long): Track? {
         return dbQuery {
-            val (trackId, startTimestamp, endTimestamp) = Tracks.selectAll().where { Tracks.id eq id }.map {
-                Triple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp])
+            val (trackId, startTimestamp, endTimestamp, category) = Tracks.selectAll().where { Tracks.id eq id }.map {
+                Quadruple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
             }.singleOrNull() ?: return@dbQuery null
             val points = pointsByTrack(trackId)
-            Track(trackId, startTimestamp, endTimestamp, points)
+            Track(trackId, startTimestamp, endTimestamp, points, category)
         }
     }
 

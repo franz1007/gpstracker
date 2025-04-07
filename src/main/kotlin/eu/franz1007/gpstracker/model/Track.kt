@@ -4,10 +4,19 @@ import eu.franz1007.gpstracker.gpxtool.Gpx
 import eu.franz1007.gpstracker.util.SloppyMath
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import kotlin.Triple
+
+enum class TRACK_CATEGORY {
+    UNCATEGORIZED, CYCLING, RUNNING, HIKING
+}
 
 @Serializable
-data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Instant, val points: List<GpsPoint>) {
+data class Track(
+    val id: Long,
+    val startTimestamp: Instant,
+    val endTimesamp: Instant,
+    val points: List<GpsPoint>,
+    val category: TRACK_CATEGORY
+) {
     fun calculateMetadata(): TrackWIthMetadata {
         val (distanceMeters, _) = points.fold(Pair<Double, GpsPoint?>(0.0, null)) { acc, next ->
             val last = acc.second
@@ -19,7 +28,9 @@ data class Track(val id: Long, val startTimestamp: Instant, val endTimesamp: Ins
             }
         }
         val averageSpeedKph = (distanceMeters / endTimesamp.minus(startTimestamp).inWholeSeconds) * 3.6
-        return TrackWIthMetadata(id, startTimestamp, endTimesamp, points, distanceMeters.toInt(), averageSpeedKph)
+        return TrackWIthMetadata(
+            id, startTimestamp, endTimesamp, points, distanceMeters.toInt(), averageSpeedKph, category
+        )
     }
 }
 
@@ -30,10 +41,11 @@ data class TrackWIthMetadata(
     val endTimesamp: Instant,
     val points: List<GpsPoint>,
     val distanceMeters: Int,
-    val averageSpeedKph: Double
+    val averageSpeedKph: Double,
+    val category: TRACK_CATEGORY
 ) {
     fun onlyMetadata(): TrackOnlyMetadata {
-        return TrackOnlyMetadata(id, startTimestamp, endTimesamp, distanceMeters, averageSpeedKph)
+        return TrackOnlyMetadata(id, startTimestamp, endTimesamp, distanceMeters, averageSpeedKph, category)
     }
 }
 
@@ -43,15 +55,18 @@ data class TrackOnlyMetadata(
     val startTimestamp: Instant,
     val endTimestamp: Instant,
     val distanceMeters: Int,
-    val averageSpeedKph: Double
+    val averageSpeedKph: Double,
+    val category: TRACK_CATEGORY
 )
 
 @Serializable
 data class TrackNoPoints(
-    val id: Long, val startTimestamp: Instant, val endTimestamp: Instant
+    val id: Long, val startTimestamp: Instant, val endTimestamp: Instant, val category: TRACK_CATEGORY
 )
 
-data class TrackNoId(val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>) {
+data class TrackNoId(
+    val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>, val category: TRACK_CATEGORY
+) {
     companion object {
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
             val points = gpx.trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
@@ -69,7 +84,7 @@ data class TrackNoId(val startTimestamp: Instant, val endTimestamp: Instant, val
                     edfa = -1
                 )
             }
-            return TrackNoId(points.first().timestamp, points.last().timestamp, points)
+            return TrackNoId(points.first().timestamp, points.last().timestamp, points, TRACK_CATEGORY.UNCATEGORIZED)
         }
     }
 }
