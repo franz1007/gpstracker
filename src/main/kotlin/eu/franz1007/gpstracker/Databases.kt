@@ -112,8 +112,19 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                         }
                     }
                 }
+                post("/updateCategory"){
+                    val trackId = call.parameters["trackId"]
+                    val newCategory = call.parameters["category"]
+                }
+
                 get("/latest") {
                     call.respondNullable(gpsPointService.readLatestTrack())
+                }
+            }
+            route("/trackCategories"){
+                get{
+                    println(TRACK_CATEGORY.entries.toTypedArray())
+                    call.respond(TRACK_CATEGORY.entries.toTypedArray())
                 }
             }
             webSocket("/ws") {
@@ -170,13 +181,22 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
         )
 
         run {
-            runBlocking {
+            run {
                 val parser = GpxParser()
-                val tracks = Files.walk(Path("September2024")).filter { it.isRegularFile() }.map {
+                val tracks = Files.walk(Path("tracks/Laufen")).filter { it.isRegularFile() }.map {
                     TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
                 }.toList()
                 tracks.forEach {
-                    gpsPointService.importTrack(it)
+                    gpsPointService.importTrack(it.copy(category = TRACK_CATEGORY.RUNNING))
+                }
+            }
+            run {
+                val parser = GpxParser()
+                val tracks = Files.walk(Path("tracks/Fahrrad")).filter { it.isRegularFile() }.map {
+                    TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
+                }.toList()
+                tracks.forEach {
+                    gpsPointService.importTrack(it.copy(category = TRACK_CATEGORY.CYCLING))
                 }
             }
         }/*
