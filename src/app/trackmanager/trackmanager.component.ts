@@ -2,10 +2,11 @@ import { Component, computed, effect, linkedSignal, resource, Signal, WritableSi
 import { TableModule } from 'primeng/table';
 import { TrackNoPoints, TrackWithMetadata } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../tracker/map/services/track.service';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-trackmanager',
-  imports: [TableModule],
+  imports: [TableModule, SelectModule],
   templateUrl: './trackmanager.component.html',
   styleUrl: './trackmanager.component.css'
 })

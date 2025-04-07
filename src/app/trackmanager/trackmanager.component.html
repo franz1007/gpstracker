@@ -6,6 +6,7 @@
             <th>EndTimestamp</th>
             <th>Distance</th>
             <th>Average speed</th>
+            <th>Category</th>
         </tr>
     </ng-template>
     <ng-template #body let-track>
@@ -14,6 +15,7 @@
             <td>{{ track.endTimestamp }}</td>
             <td>{{ track.distanceMeters }}</td>
             <td>{{ track.averageSpeedKph }}</td>
+            <td>{{ track.category }}</td>
         </tr>
     </ng-template>
 </p-table>
