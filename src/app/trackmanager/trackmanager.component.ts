@@ -3,14 +3,34 @@ import { TableModule } from 'primeng/table';
 import { TrackNoPoints, TrackWithMetadata } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../tracker/map/services/track.service';
 import { SelectModule } from 'primeng/select';
+import { FormsModule } from '@angular/forms';
+import { TagModule } from 'primeng/tag';
+
 
 @Component({
   selector: 'app-trackmanager',
-  imports: [TableModule, SelectModule],
+  imports: [TableModule, SelectModule, FormsModule, TagModule],
   templateUrl: './trackmanager.component.html',
   styleUrl: './trackmanager.component.css'
 })
 export class TrackmanagerComponent {
+  statuses = [
+    { label: 'CYCLING', value: 'CYCLING' },
+    { label: 'RUNNING', value: 'RUNNING' },
+];
+  
+
+getSeverity(status: string) {
+  switch (status) {
+      case 'CYCLING':
+          return 'CYCLING';
+
+      case 'RUNNING':
+          return 'RUNNING';
+          default: return "test"
+  }
+}
+
   tracksResource = resource(
     {
       loader: ({ request, abortSignal }): Promise<Array<TrackWithMetadata>> => {
@@ -30,5 +50,6 @@ export class TrackmanagerComponent {
         this.tracks = value;
       }
     })
+    
   }
 }
