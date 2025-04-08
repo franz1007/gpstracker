@@ -14,7 +14,7 @@ import { TagModule } from 'primeng/tag';
   styleUrl: './trackmanager.component.css'
 })
 export class TrackmanagerComponent {
-  statuses = [
+  categories = [
     { label: 'CYCLING', value: 'CYCLING' },
     { label: 'RUNNING', value: 'RUNNING' },
 ];

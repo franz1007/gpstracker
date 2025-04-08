@@ -1,12 +1,12 @@
 <p-table [value]="tracks" [tableStyle]="{ 'min-width': '50rem' }" [paginator]="true" [rows]="20"
-    [rowsPerPageOptions]="[5, 10, 20, 30, 40]" [globalFilterFields]="['name', 'country.name', 'representative.name', 'category']">
+    [rowsPerPageOptions]="[5, 10, 20, 30, 40]" [globalFilterFields]="['category']">
     <ng-template #header>
         <tr>
             <th>StartTimestamp</th>
             <th>EndTimestamp</th>
             <th>Distance</th>
             <th>Average speed</th>
-            <th>category</th>
+            <th>Category</th>
         </tr>
         <tr>
             <th>test</th>
@@ -18,13 +18,10 @@
                     <ng-template #filter let-value let-filter="filterCallback">
                         <p-select
                             [ngModel]="value"
-                            [options]="statuses"
+                            [options]="categories"
                             (onChange)="filter($event.value)"
                             placeholder="Select One"
                             [showClear]="true">
-                            <ng-template let-option #item>
-                                <p-tag [value]="option.value" [severity]="option.value" />
-                            </ng-template>
                         </p-select>
                     </ng-template>
                 </p-columnFilter>
