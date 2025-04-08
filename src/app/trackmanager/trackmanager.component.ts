@@ -1,6 +1,6 @@
-import { Component, computed, effect, linkedSignal, resource, Signal, WritableSignal } from '@angular/core';
+import { Component, effect, resource } from '@angular/core';
 import { TableModule } from 'primeng/table';
-import { TrackNoPoints, TrackWithMetadata } from '../tracker/map/trackNoPoints';
+import { TrackWithMetadata } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../tracker/map/services/track.service';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
@@ -14,10 +14,7 @@ import { TagModule } from 'primeng/tag';
   styleUrl: './trackmanager.component.css'
 })
 export class TrackmanagerComponent {
-  categories = [
-    { label: 'CYCLING', value: 'CYCLING' },
-    { label: 'RUNNING', value: 'RUNNING' },
-];
+  categories = ["CYCLING", "RUNNING"];
   
 
 getSeverity(status: string) {

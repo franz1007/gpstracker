@@ -1,4 +1,4 @@
-<p-table [value]="tracks" [tableStyle]="{ 'min-width': '50rem' }" [paginator]="true" [rows]="20"
+<p-table [value]="tracks" [tableStyle]="{ 'min-width': '50rem'}" [paginator]="true" [rows]="20"
     [rowsPerPageOptions]="[5, 10, 20, 30, 40]" [globalFilterFields]="['category']">
     <ng-template #header>
         <tr>
@@ -9,12 +9,12 @@
             <th>Category</th>
         </tr>
         <tr>
-            <th>test</th>
-            <th>test2</th>
-            <th>test3</th>
-            <th>test4</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
             <th>
-                <p-columnFilter field="category" matchMode="equals" [showMenu]="false">
+                <p-columnFilter field="category" matchMode="equals" [showClearButton]="false" [showMenu]="false">
                     <ng-template #filter let-value let-filter="filterCallback">
                         <p-select
                             [ngModel]="value"
