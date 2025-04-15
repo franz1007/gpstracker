@@ -29,7 +29,7 @@ export class TrackService {
     return this.getTrackFromUrl(track.id.toString())
   }
 
-  getTrackCategories(): Promise<Array<String>>{
+  getTrackCategories(): Promise<Array<string>>{
     return firstValueFrom(this.http.get(this.categoriesUrl) as Observable<Array<string>>)
   }
 
