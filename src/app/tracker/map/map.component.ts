@@ -59,6 +59,29 @@ export class MapComponent implements OnDestroy, OnInit {
       zoomControl: false,
     });
     L.control.zoom({ position: 'topright' }).addTo(this.map)
+    const control = L.control.layers(undefined, undefined, {
+      collapsed: false
+    }).addTo(this.map);
+    const OpenTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+      opacity: 0.90
+    });
+    const HikingTrails = L.tileLayer('https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png', {
+      id: 'hiking',
+      attribution: '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+    });
+    const CyclingTrails = L.tileLayer('https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png', {
+      id: 'cycling',
+      attribution: '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+    });
+    //const contoursDe = L.tileLayer('https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/v1/bm_web_de_3857/{z}/{x}/{y}.pbf')
+    control.addBaseLayer(this.tiles, "OpenStreetMap")
+    control.addBaseLayer(OpenTopoMap, "OpenTopoMap");
+    control.addOverlay(HikingTrails, "Hiking Routes");
+    control.addOverlay(CyclingTrails, "Cycling Routes");
+    
+    //control.addOverlay(contoursDe, "Contours Germany")
     this.tiles.addTo(this.map)
     this.lines.forEach(line => {
       line.removeFrom(this.map)

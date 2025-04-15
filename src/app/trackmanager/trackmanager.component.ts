@@ -47,6 +47,7 @@ getSeverity(status: string) {
         this.tracks = value;
       }
     })
+    trackService.getTrackCategories().then(result => this.categories = result)
     
   }
 }
