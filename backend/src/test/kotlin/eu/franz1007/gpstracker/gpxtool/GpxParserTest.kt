@@ -20,14 +20,4 @@ class GpxParserTest {
         }
     }
 
-    @Test
-    fun parseAll(){
-        val parser = GpxParser()
-        Files.walk(Path("tracks")).filter { it.isRegularFile() }.forEach{
-            println(it)
-            val gpx = parser.parseGpx(it.inputStream())
-            println(gpx)
-        }
-    }
-
 }
