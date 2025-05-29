@@ -60,7 +60,7 @@ export class MapComponent implements OnDestroy, OnInit {
     });
     L.control.zoom({ position: 'topright' }).addTo(this.map)
     const control = L.control.layers(undefined, undefined, {
-      collapsed: false
+      collapsed: true
     }).addTo(this.map);
     const OpenTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
