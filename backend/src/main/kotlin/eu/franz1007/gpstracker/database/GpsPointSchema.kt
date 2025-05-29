@@ -73,7 +73,7 @@ class GpsPointService(database: Database) {
             val newPositionId = GpsPositions.insert {
                 it[lat] = point.lat
                 it[lon] = point.lon
-            }[GpsPoints.id]
+            }[GpsPositions.id]
 
             val newPointId = GpsPoints.insert {
                 it[timestamp] = point.timestamp
