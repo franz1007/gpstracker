@@ -1,0 +1,8 @@
+[Unit]
+Description=Ktor backend for Gpstracker
+
+[Service]
+ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -jar /opt/gpstracker-backend/eu.franz1007.gpstracker-all.jar
+
+[Install]
+WantedBy=default.target
