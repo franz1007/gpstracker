@@ -180,26 +180,18 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
             altitude = 520.0
         )
 
+        /*
         run {
             run {
                 val parser = GpxParser()
-                val tracks = Files.walk(Path("tracks/Laufen")).filter { it.isRegularFile() }.map {
-                    TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
-                }.toList()
-                tracks.forEach {
-                    gpsPointService.importTrack(it.copy(category = TRACK_CATEGORY.RUNNING))
-                }
-            }
-            run {
-                val parser = GpxParser()
-                val tracks = Files.walk(Path("tracks/Fahrrad")).filter { it.isRegularFile() }.map {
+                val tracks = Files.walk(Path("September2024")).filter { it.isRegularFile() }.map {
                     TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
                 }.toList()
                 tracks.forEach {
                     gpsPointService.importTrack(it.copy(category = TRACK_CATEGORY.CYCLING))
                 }
             }
-        }/*
+        }
                         run {
                             val parser = GpxParser()
                             val tracks = Files.walk(Path("September2024")).filter { it.isRegularFile() }.map {
