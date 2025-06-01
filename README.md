@@ -1,10 +1,11 @@
 Application to receive data from osmands online tracking feature, receive it and display it as tracks on a map.
 
-# Deployment
 ## Dependencies
 - Server: 
   - java runtime. Change line in service file according to your environment.
   - nginx to avoid running application as root
+
+## Deployment
 
 Copy the service file to your chosen users unit file directory (~/.config/systemd/user/). Modify according to your needs
 
