@@ -3,7 +3,7 @@
     <ng-template #header>
         <tr>
             <th>StartTimestamp</th>
-            <th>EndTimestamp</th>
+            <th>Duration</th>
             <th>Distance</th>
             <th>Average speed</th>
             <th>Category</th>
@@ -30,8 +30,8 @@
     </ng-template>
     <ng-template #body let-track>
         <tr>
-            <td>{{ track.startTimestamp }}</td>
-            <td>{{ track.endTimestamp }}</td>
+            <td>{{ track.startTimestampString }}</td>
+            <td>{{ track.durationString }}</td>
             <td>{{ track.distanceMeters }}</td>
             <td>{{ track.averageSpeedKph }}</td>
             <td>{{ track.category }}</td>
