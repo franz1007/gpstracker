@@ -11,7 +11,7 @@ export class TrackNoPoints {
         this.category = category;
     }
 }
-export class TrackWithMetadata {
+export class TrackMetadata {
     id: number;
     startTimestamp: Instant;
     endTimestamp: Instant;

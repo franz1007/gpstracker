@@ -1,6 +1,6 @@
 import { Component, effect, resource } from '@angular/core';
 import { TableModule } from 'primeng/table';
-import { TrackWithMetadata } from '../tracker/map/trackNoPoints';
+import { TrackMetadata } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../tracker/map/services/track.service';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
@@ -30,14 +30,14 @@ getSeverity(status: string) {
 
   tracksResource = resource(
     {
-      loader: ({ request, abortSignal }): Promise<Array<TrackWithMetadata>> => {
+      loader: ({ request, abortSignal }): Promise<Array<TrackMetadata>> => {
         console.log("trying to load resource")
         const promise = this.trackService.getAllTracksWithMetadata(abortSignal);
         return promise
       },
     }
   ).asReadonly()
-  tracks: Array<TrackWithMetadata> = new Array<TrackWithMetadata>()
+  tracks: Array<TrackMetadata> = new Array<TrackMetadata>()
 
   constructor(private trackService: TrackService) {
     effect(() => {
