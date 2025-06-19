@@ -1,9 +1,7 @@
 package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
-import eu.franz1007.gpstracker.gpxtool.GpxParser
 import eu.franz1007.gpstracker.model.*
-import eu.franz1007.gpstracker.util.SloppyMath
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -17,20 +15,14 @@ import io.ktor.sse.*
 import io.ktor.util.collections.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.nio.file.Files
 import java.util.*
-import kotlin.io.path.Path
-import kotlin.io.path.inputStream
-import kotlin.io.path.isRegularFile
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
-import kotlin.time.measureTime
 import kotlin.time.toDuration
 
 fun Application.configureDatabases(gpsPointService: GpsPointService) {
@@ -76,7 +68,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                 get("/byTrack/{trackId}") {
                     when (val trackId = call.parameters["trackId"]) {
                         "latest" -> {
-                            val track = gpsPointService.readLatestTrack()
+                            val track = gpsPointService.readLatestTrackNoPoints()
                             if (track == null) {
                                 call.respond("")
                             } else {
@@ -111,17 +103,43 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                         }
                     }
                 }
-                post("/updateCategory"){
+                get("/geoJson/{trackId}") {
+                    when (val trackId = call.parameters["trackId"]) {
+                        "latest" -> {
+                            val track = gpsPointService.readLatestTrack()
+                            if (track == null) {
+                                call.respond("")
+                            } else {
+                                call.respond(track.toGeoJson().json())
+                            }
+                        }
+
+                        null -> call.respond(HttpStatusCode.BadRequest, "Path parameter id required")
+                        else -> {
+                            call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
+                            val track = gpsPointService.readTrack(trackId.toLong())
+                            if (track == null) {
+                                call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
+                            } else {
+                                call.respond(
+                                    track.toGeoJson().json()
+                                )
+                            }
+                        }
+
+                    }
+                }
+                post("/updateCategory") {
                     val trackId = call.parameters["trackId"]
                     val newCategory = call.parameters["category"]
                 }
 
                 get("/latest") {
-                    call.respondNullable(gpsPointService.readLatestTrack())
+                    call.respondNullable(gpsPointService.readLatestTrackNoPoints())
                 }
             }
-            route("/trackCategories"){
-                get{
+            route("/trackCategories") {
+                get {
                     println(TRACK_CATEGORY.entries.toTypedArray())
                     call.respond(TRACK_CATEGORY.entries.toTypedArray())
                 }

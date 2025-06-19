@@ -7,6 +7,7 @@ logback-version = "1.4.14"
 postgres-version = "42.7.2"
 exposed-version = "0.56.0"
 kotlinx-datetime-version = "0.6.1"
+spatialk-geojson-version = "0.3.0"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
@@ -38,6 +39,7 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor-version" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-version" }
+spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref= "spatialk-geojson-version"}
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }

@@ -22,8 +22,12 @@ export class MapComponent implements OnDestroy, OnInit {
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-  private lines: Map<number, L.Polyline> = new Map<number, L.Polyline>()
-  private latestLine: L.Polyline = L.polyline([], { color: "red" })
+  private lines: Map<number, L.GeoJSON> = new Map<number, L.GeoJSON>()
+  private lineStyle = {
+    color: "red",
+  };
+  private latestLine: L.GeoJSON = L.geoJSON(null, { style: this.lineStyle })
+
   private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
 
   private pointsSubscription: Subscription | null = null
@@ -80,7 +84,7 @@ export class MapComponent implements OnDestroy, OnInit {
     control.addBaseLayer(OpenTopoMap, "OpenTopoMap");
     control.addOverlay(HikingTrails, "Hiking Routes");
     control.addOverlay(CyclingTrails, "Cycling Routes");
-    
+
     //control.addOverlay(contoursDe, "Contours Germany")
     this.tiles.addTo(this.map)
     this.lines.forEach(line => {
@@ -100,22 +104,14 @@ export class MapComponent implements OnDestroy, OnInit {
 
   subscribeLatestTrack() {
     this.showNoTrack()
-    this.trackService.getLatestTrack().then(points => {
-      this.latestLine.setLatLngs(points)
-      this.marker.setLatLng(this.latestLine.getLatLngs()[this.latestLine.getLatLngs().length - 1] as L.LatLng)
-      this.marker.setRadius(20)
+    this.trackService.getLatestTrackJson().then(points => {
+      this.latestLine.addData(JSON.parse(points))
       if (!this.map.hasLayer(this.latestLine)) {
         this.latestLine.addTo(this.map)
-      }
-      if (!this.map.hasLayer(this.marker)) {
-        this.marker.addTo(this.map)
       }
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
         console.log(data)
-        this.latestLine.addLatLng(new L.LatLng(data.lat, data.lon))
-        this.marker.setLatLng(this.latestLine.getLatLngs()[this.latestLine.getLatLngs().length - 1] as L.LatLng)
-        this.latestLine.setLatLngs
       })
     })
   }
@@ -128,10 +124,12 @@ export class MapComponent implements OnDestroy, OnInit {
     tracks.forEach(track => {
       const line = this.lines.get(track.id)
       if (line === undefined) {
-        const line = L.polyline([], { color: "red" })
+        const line = L.geoJSON(null, {style: this.lineStyle})
         this.lines.set(track.id, line)
-        this.trackService.getTrack(track).pipe(first()).subscribe(points => {
-          line.setLatLngs(points)
+        this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(points => {
+          console.log(points)
+          console.log(JSON.parse(points))
+          line.addData(JSON.parse(points))
           line.addTo(this.map)
         })
       }

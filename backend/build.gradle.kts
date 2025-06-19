@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.sse)
+    implementation(libs.spatialk.geojson)
     testImplementation(libs.kotlin.test.junit)
 }
 

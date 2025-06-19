@@ -2,7 +2,6 @@ package eu.franz1007.gpstracker.database
 
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quadruple
-import eu.franz1007.gpstracker.util.SloppyMath
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
@@ -204,7 +203,7 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readLatestTrack(): TrackNoPoints? {
+    suspend fun readLatestTrackNoPoints(): TrackNoPoints? {
         return dbQuery {
             Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
                 TrackNoPoints(
@@ -214,12 +213,27 @@ class GpsPointService(database: Database) {
         }
     }
 
+    //TODO query with join should be better
+    suspend fun readLatestTrack(): Track? {
+        return dbQuery {
+            val (trackId, startTimestamp, endTimestamp, category) =
+                Tracks.selectAll()
+                    .orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
+                        Quadruple(
+                            it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                        )
+                    }.singleOrNull() ?: return@dbQuery null
+            val points = pointsByTrack(trackId)
+            Track(trackId, startTimestamp, endTimestamp, points, category)
+        }
+    }
 
     suspend fun readTrack(id: Long): Track? {
         return dbQuery {
-            val (trackId, startTimestamp, endTimestamp, category) = Tracks.selectAll().where { Tracks.id eq id }.map {
-                Quadruple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
-            }.singleOrNull() ?: return@dbQuery null
+            val (trackId, startTimestamp, endTimestamp, category) =
+                Tracks.selectAll().where { Tracks.id eq id }.map {
+                    Quadruple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
+                }.singleOrNull() ?: return@dbQuery null
             val points = pointsByTrack(trackId)
             Track(trackId, startTimestamp, endTimestamp, points, category)
         }
