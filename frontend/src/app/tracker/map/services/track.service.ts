@@ -13,6 +13,7 @@ import { JsonPipe } from '@angular/common';
 })
 export class TrackService {
   pointsUrl: string = environment.apiUrl + "/api/points/byTrack"
+  geoJsonUrl: string = environment.apiUrl + "/api/tracks/geoJson"
   latestTrackUrl: string = environment.apiUrl + "/api/tracks/latest"
   tracksUrl: string = environment.apiUrl + "/api/tracks"
   trackMetadataUrl: string = environment.apiUrl + "/api/tracks/metadata"
@@ -20,6 +21,18 @@ export class TrackService {
 
 
   constructor(private http: HttpClient) { }
+
+  async getLatestTrackJson(): Promise<string> {
+    return firstValueFrom(this.getTrackGeoJsonFromUrl("latest"))
+  }
+
+  getTrackGeoJson(track: TrackNoPoints) {
+    return this.getTrackGeoJsonFromUrl(track.id.toString())
+  }
+
+  getTrackGeoJsonFromUrl(id: string): Observable<string> {
+    return this.http.get(this.geoJsonUrl + "/" + id, { responseType: 'text' })
+  }
 
   async getLatestTrack(): Promise<L.LatLng[]> {
     return firstValueFrom(this.getTrackFromUrl("latest"))
@@ -29,7 +42,7 @@ export class TrackService {
     return this.getTrackFromUrl(track.id.toString())
   }
 
-  getTrackCategories(): Promise<Array<string>>{
+  getTrackCategories(): Promise<Array<string>> {
     return firstValueFrom(this.http.get(this.categoriesUrl) as Observable<Array<string>>)
   }
 
@@ -80,7 +93,7 @@ export class TrackService {
     });
     return sorted.map((track) => {
       const trackObject = new TrackMetadata(track.id, track.startTimestamp, track.endTimestamp, track.category)
-      fetch(this.trackMetadataUrl + "/" + trackObject.id, {signal: abortSignal}).then(response => {
+      fetch(this.trackMetadataUrl + "/" + trackObject.id, { signal: abortSignal }).then(response => {
         response.text().then(text => {
           const track = JSON.parse(text, (key, value) => {
             if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
@@ -93,7 +106,7 @@ export class TrackService {
           trackObject.averageSpeedKph = track.averageSpeedKph
           console.log("received distances")
         })
-        
+
       })
       return trackObject
     })
