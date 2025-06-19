@@ -7,6 +7,7 @@ import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
 import { TrackNoPoints, TrackMetadata } from '../trackNoPoints';
 import { JsonPipe } from '@angular/common';
+import { Feature } from 'geojson';
 
 @Injectable({
   providedIn: 'root'
@@ -22,16 +23,16 @@ export class TrackService {
 
   constructor(private http: HttpClient) { }
 
-  async getLatestTrackJson(): Promise<string> {
+  async getLatestTrackJson(): Promise<Feature<GeoJSON.LineString>> {
     return firstValueFrom(this.getTrackGeoJsonFromUrl("latest"))
   }
 
-  getTrackGeoJson(track: TrackNoPoints) {
+  getTrackGeoJson(track: TrackNoPoints) : Observable<Feature<GeoJSON.LineString>> {
     return this.getTrackGeoJsonFromUrl(track.id.toString())
   }
 
-  getTrackGeoJsonFromUrl(id: string): Observable<string> {
-    return this.http.get(this.geoJsonUrl + "/" + id, { responseType: 'text' })
+  getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
+    return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
   }
 
   async getLatestTrack(): Promise<L.LatLng[]> {
