@@ -4,6 +4,7 @@ import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { first, Subscription } from 'rxjs';
+import { Feature, LineString } from 'geojson';
 
 
 @Component({
@@ -27,6 +28,8 @@ export class MapComponent implements OnDestroy, OnInit {
     color: "red",
   };
   private latestLine: L.GeoJSON = L.geoJSON(null, { style: this.lineStyle })
+
+  private latestJson: Feature<GeoJSON.LineString> = L.geoJSON() as unknown as Feature<LineString>
 
   private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
 
@@ -104,14 +107,17 @@ export class MapComponent implements OnDestroy, OnInit {
 
   subscribeLatestTrack() {
     this.showNoTrack()
-    this.trackService.getLatestTrackJson().then(points => {
-      this.latestLine.addData(JSON.parse(points))
+    this.trackService.getLatestTrackJson().then(lineString => {
+      this.latestJson = lineString
+      this.latestLine.addData(this.latestJson)
       if (!this.map.hasLayer(this.latestLine)) {
         this.latestLine.addTo(this.map)
       }
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
-        console.log(data)
+        this.latestJson.geometry.coordinates.push([data.lon, data.lat, data.altitude])
+        this.latestLine.clearLayers()
+        this.latestLine.addData(this.latestJson)      
       })
     })
   }
@@ -126,10 +132,8 @@ export class MapComponent implements OnDestroy, OnInit {
       if (line === undefined) {
         const line = L.geoJSON(null, {style: this.lineStyle})
         this.lines.set(track.id, line)
-        this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(points => {
-          console.log(points)
-          console.log(JSON.parse(points))
-          line.addData(JSON.parse(points))
+        this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(lineString => {
+          line.addData(lineString)
           line.addTo(this.map)
         })
       }
