@@ -96,7 +96,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                 get {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
-                get("/withMetadata/{trackId}") {
+                get("/metadata/{trackId}") {
                     val trackId = call.parameters["trackId"]
                     if (trackId == null) {
                         call.respond(HttpStatusCode.BadRequest, "Path parameter id required")
@@ -105,9 +105,8 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                         if (track == null) {
                             call.respond(HttpStatusCode.NotFound)
                         } else {
-                            val withMetadata = track.calculateMetadata().onlyMetadata()
                             call.respond(
-                                withMetadata
+                                track.calculateMetadata().onlyMetadata()
                             )
                         }
                     }
