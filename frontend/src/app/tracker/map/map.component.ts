@@ -4,7 +4,7 @@ import { TrackService } from './services/track.service';
 import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { first, Subscription } from 'rxjs';
-import { Feature, LineString } from 'geojson';
+import { Feature, LineString, Position } from 'geojson';
 
 
 @Component({
@@ -113,11 +113,20 @@ export class MapComponent implements OnDestroy, OnInit {
       if (!this.map.hasLayer(this.latestLine)) {
         this.latestLine.addTo(this.map)
       }
+      const position: Position = lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]
+      this.marker.setLatLng([position[0], position[1]])
+      this.marker.setRadius(20)
+      if (!this.map.hasLayer(this.marker)) {
+        this.marker.addTo(this.map)
+      }
+
     }).finally(() => {
       this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
         this.latestJson.geometry.coordinates.push([data.lon, data.lat, data.altitude])
         this.latestLine.clearLayers()
-        this.latestLine.addData(this.latestJson)      
+        this.latestLine.addData(this.latestJson)
+        this.marker.setLatLng([data.lat, data.lon])
+
       })
     })
   }
@@ -130,7 +139,7 @@ export class MapComponent implements OnDestroy, OnInit {
     tracks.forEach(track => {
       const line = this.lines.get(track.id)
       if (line === undefined) {
-        const line = L.geoJSON(null, {style: this.lineStyle})
+        const line = L.geoJSON(null, { style: this.lineStyle })
         this.lines.set(track.id, line)
         this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(lineString => {
           line.addData(lineString)
