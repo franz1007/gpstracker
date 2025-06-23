@@ -10,6 +10,7 @@ import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
+import io.ktor.server.util.*
 import io.ktor.server.websocket.*
 import io.ktor.sse.*
 import io.ktor.util.collections.*
@@ -30,20 +31,18 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
     val sseConnections = ConcurrentSet<ServerSSESession>()
     routing {
         get("/osmand") {
-            val timestamp = call.parameters["timestamp"]?.toLong()?.let { it1 -> Instant.fromEpochMilliseconds(it1) }
-                ?: throw BadRequestException("Invalid timestamp")
-            val lat = call.parameters["lat"]?.toDouble() ?: throw BadRequestException("Invalid lat")
-            val lon = call.parameters["lon"]?.toDouble() ?: throw BadRequestException("Invalid lon")
-            val hdop = call.parameters["hdop"]?.toDouble() ?: throw BadRequestException("Invalid hdop")
-            val altitude = call.parameters["altitude"]?.toDouble() ?: throw BadRequestException("Invalid altitude")
-            val speed = call.parameters["speed"]?.toDouble() ?: throw BadRequestException("Invalid speed")
-            val bearing = call.parameters["bearing"]?.toDouble() ?: throw BadRequestException("Invalid bearing")
-            val eta = call.parameters["eta"]?.toLong()?.let { it1 -> Instant.fromEpochMilliseconds(it1) }
-                ?: throw BadRequestException("Invalid eta")
-            val etfa = call.parameters["etfa"]?.toLong()?.let { it1 -> Instant.fromEpochMilliseconds(it1) }
-                ?: throw BadRequestException("Invalid etfa")
-            val eda = call.parameters["eda"]?.toInt() ?: throw BadRequestException("Invalid eda")
-            val edfa = call.parameters["edfa"]?.toInt() ?: throw BadRequestException("Invalid edfa")
+            val timestamp =
+                call.parameters.getOrFail<Long>("timestamp").let { it1 -> Instant.fromEpochMilliseconds(it1) }
+            val lat = call.parameters.getOrFail<Double>("lat")
+            val lon = call.parameters.getOrFail<Double>("lon")
+            val hdop = call.parameters.getOrFail<Double>("hdop")
+            val altitude = call.parameters.getOrFail<Double>("altitude")
+            val speed = call.parameters.getOrFail<Double>("speed")
+            val bearing = call.parameters.getOrFail<Double>("bearing")
+            val eta = call.parameters.getOrFail<Long>("eta").let { it1 -> Instant.fromEpochMilliseconds(it1) }
+            val etfa = call.parameters.getOrFail<Long>("etfa").let { it1 -> Instant.fromEpochMilliseconds(it1) }
+            val eda = call.parameters.getOrFail<Int>("eda")
+            val edfa = call.parameters.getOrFail<Int>("edfa")
             val point = GpsPointNoId(timestamp, lat, lon, hdop, altitude, speed, bearing, eta, etfa, eda, edfa)
             val id = gpsPointService.addPoint(point)
             connections.forEach {
@@ -66,7 +65,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                     call.respond(gpsPointService.readAllPoints())
                 }
                 get("/byTrack/{trackId}") {
-                    when (val trackId = call.parameters["trackId"]) {
+                    when (val trackId = call.parameters.getOrFail("trackId")) {
                         "latest" -> {
                             val track = gpsPointService.readLatestTrackNoPoints()
                             if (track == null) {
@@ -76,7 +75,6 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                             }
                         }
 
-                        null -> call.respond(HttpStatusCode.BadRequest)
                         else -> {
                             call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
                             call.respond(gpsPointService.pointsByTrack(trackId.toLong()))
@@ -89,22 +87,18 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
                 get("/metadata/{trackId}") {
-                    val trackId = call.parameters["trackId"]
-                    if (trackId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Path parameter id required")
+                    val trackId = call.parameters.getOrFail<Long>("trackId")
+                    val track = gpsPointService.readTrack(trackId)
+                    if (track == null) {
+                        call.respond(HttpStatusCode.NotFound)
                     } else {
-                        val track = gpsPointService.readTrack(trackId.toLong())
-                        if (track == null) {
-                            call.respond(HttpStatusCode.NotFound)
-                        } else {
-                            call.respond(
-                                track.calculateMetadata().onlyMetadata()
-                            )
-                        }
+                        call.respond(
+                            track.calculateMetadata().onlyMetadata()
+                        )
                     }
                 }
                 get("/geoJson/{trackId}") {
-                    when (val trackId = call.parameters["trackId"]) {
+                    when (val trackId = call.parameters.getOrFail("trackId")) {
                         "latest" -> {
                             val track = gpsPointService.readLatestTrack()
                             if (track == null) {
@@ -114,7 +108,6 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                             }
                         }
 
-                        null -> call.respond(HttpStatusCode.BadRequest, "Path parameter id required")
                         else -> {
                             call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
                             val track = gpsPointService.readTrack(trackId.toLong())
@@ -130,8 +123,9 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                     }
                 }
                 post("/updateCategory") {
-                    val trackId = call.parameters["trackId"]
-                    val newCategory = call.parameters["category"]
+                    val trackId = call.parameters.getOrFail<Long>("trackId")
+                    val newCategory = call.parameters.getOrFail("category")
+                    gpsPointService.categorizeTrack(trackId, TRACK_CATEGORY.valueOf(newCategory))
                 }
 
                 get("/latest") {
