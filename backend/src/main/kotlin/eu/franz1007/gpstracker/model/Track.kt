@@ -35,17 +35,6 @@ data class Track(
             id, startTimestamp, endTimestamp, points, distanceMeters.toInt(), averageSpeedKph, category
         )
     }
-
-    fun toGeoJson(): Feature = feature(geometry = lineString {
-        points.forEach {
-            point(it.lon, it.lat, it.altitude)
-        }
-    }, id = "track$id") {
-        put("startTimestamp", startTimestamp.toString())
-        put("endTimestamp", endTimestamp.toString())
-        put("category", category.toString())
-    }
-
 }
 
 @Serializable
@@ -60,6 +49,18 @@ data class TrackWIthMetadata(
 ) {
     fun onlyMetadata(): TrackOnlyMetadata {
         return TrackOnlyMetadata(id, startTimestamp, endTimestamp, distanceMeters, averageSpeedKph, category)
+    }
+
+    fun toGeoJson(): Feature = feature(geometry = lineString {
+        points.forEach {
+            point(it.lon, it.lat, it.altitude)
+        }
+    }, id = "track$id") {
+        put("startTimestamp", startTimestamp.toString())
+        put("endTimestamp", endTimestamp.toString())
+        put("distanceMeters", distanceMeters.toString())
+        put("category", category.toString())
+        put("averageSpeedKph", averageSpeedKph.toString())
     }
 }
 

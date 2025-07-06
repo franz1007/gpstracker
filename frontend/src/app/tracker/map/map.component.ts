@@ -5,6 +5,7 @@ import { SsePointService } from './services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { first, Subscription } from 'rxjs';
 import { Feature, LineString, Position } from 'geojson';
+import { DateTimeFormatter, Instant, ZoneId } from '@js-joda/core';
 
 
 @Component({
@@ -114,7 +115,7 @@ export class MapComponent implements OnDestroy, OnInit {
         this.latestLine.addTo(this.map)
       }
       const position: Position = lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]
-      this.marker.setLatLng([position[0], position[1]])
+      this.marker.setLatLng([position[1], position[0]])
       this.marker.setRadius(20)
       if (!this.map.hasLayer(this.marker)) {
         this.marker.addTo(this.map)
@@ -139,7 +140,22 @@ export class MapComponent implements OnDestroy, OnInit {
     tracks.forEach(track => {
       const line = this.lines.get(track.id)
       if (line === undefined) {
-        const line = L.geoJSON(null, { style: this.lineStyle })
+        const line = L.geoJSON(null,
+          {
+            style: this.lineStyle,
+            onEachFeature: (feature: Feature, layer: L.Layer) => {
+              if (feature.properties !== null) {
+                const popup = document.createElement("div")
+                const timestampParagraph = document.createElement("p")
+                timestampParagraph.innerText = "Timestamp: " + Instant.parse(feature.properties["startTimestamp"]).atZone(ZoneId.SYSTEM).format(DateTimeFormatter.ofPattern('yyyy-MM-dd HH:mm'))
+                const distanceParagraph = document.createElement("p")
+                distanceParagraph.innerText = "Distance (meters): " + feature.properties["distanceMeters"]
+                popup.appendChild(timestampParagraph)
+                popup.appendChild(distanceParagraph)
+                layer.bindPopup(popup)
+              }
+            }
+          })
         this.lines.set(track.id, line)
         this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(lineString => {
           line.addData(lineString)

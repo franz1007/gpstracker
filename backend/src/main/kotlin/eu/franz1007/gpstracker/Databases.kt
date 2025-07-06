@@ -1,11 +1,11 @@
 package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
-import eu.franz1007.gpstracker.model.*
+import eu.franz1007.gpstracker.model.GpsPointNoId
+import eu.franz1007.gpstracker.model.TRACK_CATEGORY
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
-import io.ktor.server.plugins.*
 import io.ktor.server.plugins.cachingheaders.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.io.IOException
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.time.Duration
@@ -104,7 +103,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                             if (track == null) {
                                 call.respond("")
                             } else {
-                                call.respond(track.toGeoJson().json())
+                                call.respond(track.calculateMetadata().toGeoJson().json())
                             }
                         }
 
@@ -115,7 +114,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                                 call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
                             } else {
                                 call.respond(
-                                    track.toGeoJson().json()
+                                    track.calculateMetadata().toGeoJson().json()
                                 )
                             }
                         }
