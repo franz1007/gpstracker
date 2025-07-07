@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
 import { environment } from '../../../../environments/environment';
-import { firstValueFrom, map, Observable } from 'rxjs';
+import { firstValueFrom, from, map, Observable } from 'rxjs';
 import { GpsPoint } from '../gps-point';
 import { Instant } from '@js-joda/core';
 import { TrackNoPoints, TrackMetadata } from '../trackNoPoints';
 import { JsonPipe } from '@angular/common';
 import { Feature } from 'geojson';
+import { IdbcacheService } from '../../../idbcache.service';
 
 @Injectable({
   providedIn: 'root'
@@ -21,19 +22,40 @@ export class TrackService {
   categoriesUrl: string = environment.apiUrl + "/api/trackCategories"
 
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private idbService: IdbcacheService) { }
 
   async getLatestTrackJson(): Promise<Feature<GeoJSON.LineString>> {
     return firstValueFrom(this.getTrackGeoJsonFromUrl("latest"))
   }
 
-  getTrackGeoJson(track: TrackNoPoints) : Observable<Feature<GeoJSON.LineString>> {
+  getTrackGeoJson(track: TrackNoPoints): Observable<Feature<GeoJSON.LineString>> {
     return this.getTrackGeoJsonFromUrl(track.id.toString())
   }
 
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
-    return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
+    if (id !== "latest") {
+      const track = from(this.idbService.getTrack(id).then(result => {
+        if (result === null) {
+          const res = this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
+          return firstValueFrom(res.pipe(observable => {
+            observable.subscribe(trackFromNetwork => {
+              this.idbService.storeTrack(id, trackFromNetwork)
+              console.log("stored track")
+            })
+            return observable
+          }))
+        }
+        else {
+          return result
+        }
+      }))
+      return track
+    }
+    else {
+      return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
+    }
   }
+
 
   async getLatestTrack(): Promise<L.LatLng[]> {
     return firstValueFrom(this.getTrackFromUrl("latest"))
