@@ -1,7 +1,7 @@
 import { Component, effect, resource } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { TrackMetadata } from '../tracker/map/trackNoPoints';
-import { TrackService } from '../tracker/map/services/track.service';
+import { TrackService } from '../services/track.service';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { TagModule } from 'primeng/tag';
@@ -15,18 +15,18 @@ import { TagModule } from 'primeng/tag';
 })
 export class TrackmanagerComponent {
   categories = ["CYCLING", "RUNNING"];
-  
 
-getSeverity(status: string) {
-  switch (status) {
+
+  getSeverity(status: string) {
+    switch (status) {
       case 'CYCLING':
-          return 'CYCLING';
+        return 'CYCLING';
 
       case 'RUNNING':
-          return 'RUNNING';
-          default: return "test"
+        return 'RUNNING';
+      default: return "test"
+    }
   }
-}
 
   tracksResource = resource(
     {
@@ -48,6 +48,6 @@ getSeverity(status: string) {
       }
     })
     trackService.getTrackCategories().then(result => this.categories = result)
-    
+
   }
 }

@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import * as L from 'leaflet';
-import { environment } from '../../../../environments/environment';
+import { environment } from '../../environments/environment';
 import { firstValueFrom, from, map, Observable } from 'rxjs';
-import { GpsPoint } from '../gps-point';
+import { GpsPoint } from '../tracker/map/gps-point';
 import { Instant } from '@js-joda/core';
-import { TrackNoPoints, TrackMetadata } from '../trackNoPoints';
+import { TrackNoPoints, TrackMetadata } from '../tracker/map/trackNoPoints';
 import { JsonPipe } from '@angular/common';
 import { Feature } from 'geojson';
-import { IdbcacheService } from '../../../idbcache.service';
+import { IdbcacheService } from '../idbcache.service';
 
 @Injectable({
   providedIn: 'root'

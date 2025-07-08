@@ -1,7 +1,7 @@
 import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal, OnDestroy, OnInit } from '@angular/core';
 import * as L from 'leaflet';
-import { TrackService } from './services/track.service';
-import { SsePointService } from './services/ssePoint.service';
+import { TrackService } from '../../services/track.service';
+import { SsePointService } from '../../services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
 import { first, Subscription } from 'rxjs';
 import { Feature, LineString, Position } from 'geojson';
