@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { TreeModule } from 'primeng/tree';
 import { TreeNode, } from 'primeng/api';
 import { TrackNoPoints } from './map/trackNoPoints';
-import { TrackService } from './map/services/track.service';
+import { TrackService } from '../services/track.service';
 import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
 
 @Component({
