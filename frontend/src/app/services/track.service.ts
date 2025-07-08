@@ -1,12 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import * as L from 'leaflet';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, from, map, Observable } from 'rxjs';
-import { GpsPoint } from '../tracker/map/gps-point';
 import { Instant } from '@js-joda/core';
 import { TrackNoPoints, TrackMetadata } from '../tracker/map/trackNoPoints';
-import { JsonPipe } from '@angular/common';
 import { Feature } from 'geojson';
 import { IdbcacheService } from '../idbcache.service';
 
@@ -34,12 +31,12 @@ export class TrackService {
 
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
     if (id !== "latest") {
-      const track = from(this.idbService.getTrack(id).then(result => {
+      const track = from(this.idbService.getTrackFeature(id).then(result => {
         if (result === null) {
           const res = this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
           return firstValueFrom(res.pipe(observable => {
             observable.subscribe(trackFromNetwork => {
-              this.idbService.storeTrack(id, trackFromNetwork)
+              this.idbService.storeFeature(id, trackFromNetwork)
               console.log("stored track")
             })
             return observable
@@ -56,32 +53,8 @@ export class TrackService {
     }
   }
 
-
-  async getLatestTrack(): Promise<L.LatLng[]> {
-    return firstValueFrom(this.getTrackFromUrl("latest"))
-  }
-
-  getTrack(track: TrackNoPoints): Observable<L.LatLng[]> {
-    return this.getTrackFromUrl(track.id.toString())
-  }
-
   getTrackCategories(): Promise<Array<string>> {
     return firstValueFrom(this.http.get(this.categoriesUrl) as Observable<Array<string>>)
-  }
-
-  getTrackFromUrl(id: string): Observable<L.LatLng[]> {
-    return this.http.get(this.pointsUrl + "/" + id, { responseType: 'text' }).pipe(map((res) => {
-      const points = JSON.parse(res, (key, value) => {
-        if (key === "eta" || key === "etfa" || key === "timestamp") {
-          return Instant.parse(value);
-        } else {
-          return value;
-        }
-      }) as Array<GpsPoint>;
-      return points.map(point => {
-        return new L.LatLng(point.lat, point.lon)
-      })
-    }))
   }
 
   async getAllTracks(abortSignal: AbortSignal): Promise<Array<TrackNoPoints>> {
@@ -114,24 +87,33 @@ export class TrackService {
       a.startTimestamp.compareTo(b.endTimestamp)
       return a.startTimestamp.compareTo(b.startTimestamp)
     });
-    return sorted.map((track) => {
-      const trackObject = new TrackMetadata(track.id, track.startTimestamp, track.endTimestamp, track.category)
-      fetch(this.trackMetadataUrl + "/" + trackObject.id, { signal: abortSignal }).then(response => {
-        response.text().then(text => {
-          const track = JSON.parse(text, (key, value) => {
-            if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
-              return Instant.parse(value);
-            } else {
-              return value;
-            }
-          }) as TrackMetadata
-          trackObject.distanceMeters = track.distanceMeters
-          trackObject.averageSpeedKph = track.averageSpeedKph
-          console.log("received distances")
-        })
 
-      })
-      return trackObject
+    const test = sorted.map(async (track) => {
+      const metadata = await this.idbService.getMetadata(track.id.toString())
+      if (metadata === null) {
+        const trackObject = new TrackMetadata(track.id, track.startTimestamp, track.endTimestamp, track.category)
+
+        fetch(this.trackMetadataUrl + "/" + trackObject.id, { signal: abortSignal }).then(response => {
+          response.text().then(text => {
+            const track = JSON.parse(text, (key, value) => {
+              if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+                return Instant.parse(value);
+              } else {
+                return value;
+              }
+            }) as TrackMetadata
+            trackObject.distanceMeters = track.distanceMeters
+            trackObject.averageSpeedKph = track.averageSpeedKph
+            console.log("received distances")
+            this.idbService.storeMetadata(track.id.toString(), trackObject)
+          })
+        })
+        return trackObject
+      }
+      else {
+        return metadata
+      }
     })
+    return await Promise.all(test)
   }
 }
