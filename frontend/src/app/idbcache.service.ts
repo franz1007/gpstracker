@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Feature } from 'geojson';
 import { TrackMetadata } from './tracker/map/trackNoPoints';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import { Instant } from '@js-joda/core';
 
 
 
@@ -12,19 +13,23 @@ export class IdbcacheService {
   constructor() {
   }
 
-  public async getTrackFeature(id: number): Promise<Feature<GeoJSON.LineString> | null> {
+  public async getTrackFeature(id: number): Promise<{
+    feature: Feature<GeoJSON.LineString> | null,
+    startTimestampMillis: number | null;
+    endTimestampMillis: number | null
+  }> {
     const db = await this.initDB()
     return db.get("features", id).then((value) => {
       if (value !== undefined) {
-        console.log("Successfully retreived feature for Track " + id + " from indexeddb")
-        return value.feature
+        console.log("Retreived feature for Track " + id + " from indexeddb")
+        return { feature: value.feature, startTimestampMillis: value.startTimestamp, endTimestampMillis: value.endTimestamp }
       }
       else {
-        return null
+        return { feature: null, startTimestampMillis: null, endTimestampMillis: null }
       }
     }).catch(() => {
       console.log("error getting " + id + "from idb")
-      return null
+      return { feature: null, startTimestampMillis: null, endTimestampMillis: null }
     })
   }
 
@@ -44,9 +49,9 @@ export class IdbcacheService {
 
 
 
-  public storeFeature(id: number, feature: Feature<GeoJSON.LineString>) {
+  public storeFeature(id: number, feature: Feature<GeoJSON.LineString>, startTimestamp: Instant, endTimestamp: Instant) {
     this.initDB().then(db => {
-      db.put("features", { feature: feature }, id)
+      db.put("features", { feature: feature, startTimestamp: startTimestamp.toEpochMilli(), endTimestamp: endTimestamp.toEpochMilli() }, id)
       const transaction = db.transaction("features", "readwrite")
     })
   }
@@ -58,7 +63,7 @@ export class IdbcacheService {
   }
 
   async initDB() {
-    return await openDB<MyDB>('my-db', 2, {
+    return await openDB<MyDB>('my-db', 3, {
       upgrade(db) {
         db.createObjectStore("features")
         db.createObjectStore("metadata")
@@ -71,7 +76,9 @@ interface MyDB extends DBSchema {
   features: {
     key: number,
     value: {
-      feature: Feature<GeoJSON.LineString>
+      feature: Feature<GeoJSON.LineString>,
+      startTimestamp: number,
+      endTimestamp: number
     };
   };
   metadata: {
