@@ -26,32 +26,30 @@ export class TrackService {
   }
 
   getTrackGeoJson(track: TrackNoPoints): Observable<Feature<GeoJSON.LineString>> {
-    return this.getTrackGeoJsonFromUrl(track.id.toString())
+    const trackResult = from(this.idbService.getTrackFeature(track.id).then(result => {
+      if (result.feature === null || result.startTimestampMillis !== track.startTimestamp.toEpochMilli() || result.endTimestampMillis !== track.endTimestamp.toEpochMilli()) {
+        const res = this.getTrackGeoJsonFromUrl(track.id.toString())
+        return firstValueFrom(res.pipe(observable => {
+          observable.subscribe(trackFromNetwork => {
+            this.idbService.storeFeature(track.id, trackFromNetwork, track.startTimestamp, track.endTimestamp)
+            console.log("stored track")
+          })
+          return observable
+        }))
+      }
+      else {
+        console.log("Successfully retreived feature for Track " + track.id + " from indexeddb")
+        return result.feature
+      }
+    }))
+    return trackResult
   }
 
+
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
-    if (id !== "latest") {
-      const track = from(this.idbService.getTrackFeature(parseInt(id)).then(result => {
-        if (result === null) {
-          const res = this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
-          return firstValueFrom(res.pipe(observable => {
-            observable.subscribe(trackFromNetwork => {
-              this.idbService.storeFeature(parseInt(id), trackFromNetwork)
-              console.log("stored track")
-            })
-            return observable
-          }))
-        }
-        else {
-          return result
-        }
-      }))
-      return track
-    }
-    else {
-      return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
-    }
+    return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
   }
+
 
   getTrackCategories(): Promise<Array<string>> {
     return firstValueFrom(this.http.get(this.categoriesUrl) as Observable<Array<string>>)
