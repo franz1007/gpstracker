@@ -31,12 +31,12 @@ export class TrackService {
 
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
     if (id !== "latest") {
-      const track = from(this.idbService.getTrackFeature(id).then(result => {
+      const track = from(this.idbService.getTrackFeature(parseInt(id)).then(result => {
         if (result === null) {
           const res = this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
           return firstValueFrom(res.pipe(observable => {
             observable.subscribe(trackFromNetwork => {
-              this.idbService.storeFeature(id, trackFromNetwork)
+              this.idbService.storeFeature(parseInt(id), trackFromNetwork)
               console.log("stored track")
             })
             return observable
@@ -89,7 +89,7 @@ export class TrackService {
     });
 
     const test = sorted.map(async (track) => {
-      const metadata = await this.idbService.getMetadata(track.id.toString())
+      const metadata = await this.idbService.getMetadata(track.id)
       if (metadata === null) {
         const trackObject = new TrackMetadata(track.id, track.startTimestamp, track.endTimestamp, track.category)
 
@@ -105,7 +105,7 @@ export class TrackService {
             trackObject.distanceMeters = track.distanceMeters
             trackObject.averageSpeedKph = track.averageSpeedKph
             console.log("received distances")
-            this.idbService.storeMetadata(track.id.toString(), trackObject)
+            this.idbService.storeMetadata(track.id, trackObject)
           })
         })
         return trackObject
