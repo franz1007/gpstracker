@@ -1,18 +1,23 @@
 package eu.franz1007.gpstracker.database
 
 import eu.franz1007.gpstracker.model.*
-import eu.franz1007.gpstracker.uitl.Quadruple
+import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlin.uuid.toJavaUuid
+import kotlin.uuid.toKotlinUuid
 
-
+@OptIn(ExperimentalUuidApi::class)
 class GpsPointService(database: Database) {
 
     object Tracks : Table() {
         val id = long("id").autoIncrement()
+        val uuid = uuid("uuid").index().autoGenerate()
         val startTimestamp = timestamp("startTimestamp")
         val endTimestamp = timestamp("endTimestamp")
         val category = enumeration<TRACK_CATEGORY>("category")
@@ -94,9 +99,9 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun categorizeTrack(trackId: Long, newCategory: TRACK_CATEGORY) {
+    suspend fun categorizeTrack(trackId: Uuid, newCategory: TRACK_CATEGORY) {
         dbQuery {
-            Tracks.update({ Tracks.id eq trackId }) {
+            Tracks.update({ Tracks.uuid eq trackId.toJavaUuid() }) {
                 it[category] = newCategory
             }
         }
@@ -198,7 +203,12 @@ class GpsPointService(database: Database) {
     suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
         return dbQuery {
             Tracks.selectAll().map {
-                TrackNoPoints(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
+                TrackNoPoints(
+                    it[Tracks.uuid].toKotlinUuid(),
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category]
+                )
             }
         }
     }
@@ -207,7 +217,10 @@ class GpsPointService(database: Database) {
         return dbQuery {
             Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
                 TrackNoPoints(
-                    it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                    it[Tracks.uuid].toKotlinUuid(),
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category]
                 )
             }.singleOrNull()
         }
@@ -216,26 +229,35 @@ class GpsPointService(database: Database) {
     //TODO query with join should be better
     suspend fun readLatestTrack(): Track? {
         return dbQuery {
-            val (trackId, startTimestamp, endTimestamp, category) =
-                Tracks.selectAll()
-                    .orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
-                        Quadruple(
-                            it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
-                        )
-                    }.singleOrNull() ?: return@dbQuery null
+            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
+                .orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
+                    Quintuple(
+                        it[Tracks.id],
+                        it[Tracks.uuid],
+                        it[Tracks.startTimestamp],
+                        it[Tracks.endTimestamp],
+                        it[Tracks.category]
+                    )
+                }.singleOrNull() ?: return@dbQuery null
             val points = pointsByTrack(trackId)
-            Track(trackId, startTimestamp, endTimestamp, points, category)
+            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
         }
     }
 
-    suspend fun readTrack(id: Long): Track? {
+    suspend fun readTrack(uuid: Uuid): Track? {
         return dbQuery {
-            val (trackId, startTimestamp, endTimestamp, category) =
-                Tracks.selectAll().where { Tracks.id eq id }.map {
-                    Quadruple(it[Tracks.id], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category])
+            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
+                .where { Tracks.uuid eq uuid.toJavaUuid() }.map {
+                    Quintuple(
+                        it[Tracks.id],
+                        it[Tracks.uuid],
+                        it[Tracks.startTimestamp],
+                        it[Tracks.endTimestamp],
+                        it[Tracks.category]
+                    )
                 }.singleOrNull() ?: return@dbQuery null
             val points = pointsByTrack(trackId)
-            Track(trackId, startTimestamp, endTimestamp, points, category)
+            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
         }
     }
 

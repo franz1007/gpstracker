@@ -1,8 +1,10 @@
 package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
+import eu.franz1007.gpstracker.gpxtool.GpxParser
 import eu.franz1007.gpstracker.model.GpsPointNoId
 import eu.franz1007.gpstracker.model.TRACK_CATEGORY
+import eu.franz1007.gpstracker.model.TrackNoId
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -20,11 +22,18 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
+import java.nio.file.Files
 import java.util.*
+import kotlin.io.path.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 fun Application.configureDatabases(gpsPointService: GpsPointService) {
     val connections = Collections.synchronizedSet<DefaultWebSocketServerSession>(LinkedHashSet())
     val sseConnections = ConcurrentSet<ServerSSESession>()
@@ -59,34 +68,20 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
             call.response.status(HttpStatusCode.OK)
         }
         route("/api") {
-            route("/points") {
-                get {
-                    call.respond(gpsPointService.readAllPoints())
-                }
-                get("/byTrack/{trackId}") {
-                    when (val trackId = call.parameters.getOrFail("trackId")) {
-                        "latest" -> {
-                            val track = gpsPointService.readLatestTrackNoPoints()
-                            if (track == null) {
-                                call.respond("")
-                            } else {
-                                call.respond(gpsPointService.pointsByTrack(track.id))
-                            }
-                        }
-
-                        else -> {
-                            call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
-                            call.respond(gpsPointService.pointsByTrack(trackId.toLong()))
-                        }
-                    }
-                }
-            }
             route("/tracks") {
                 get {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
                 get("/metadata/{trackId}") {
-                    val trackId = call.parameters.getOrFail<Long>("trackId")
+                    val trackId = call.parameters.getOrFail("trackid").let {
+                        runCatching {
+                            Uuid.parse(it)
+                        }.getOrElse {
+                            call.respond(HttpStatusCode.BadRequest, it.message.orEmpty())
+                            return@get
+                        }
+                    }
+                    println("test")
                     val track = gpsPointService.readTrack(trackId)
                     if (track == null) {
                         call.respond(HttpStatusCode.NotFound)
@@ -109,7 +104,7 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
 
                         else -> {
                             call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
-                            val track = gpsPointService.readTrack(trackId.toLong())
+                            val track = gpsPointService.readTrack(Uuid.parse(trackId))
                             if (track == null) {
                                 call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
                             } else {
@@ -122,7 +117,14 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                     }
                 }
                 post("/updateCategory") {
-                    val trackId = call.parameters.getOrFail<Long>("trackId")
+                    val trackId = call.parameters.getOrFail("trackid").let {
+                        runCatching {
+                            Uuid.parse(it)
+                        }.getOrElse {
+                            call.respond(HttpStatusCode.BadRequest, it.message.orEmpty())
+                            return@post
+                        }
+                    }
                     val newCategory = call.parameters.getOrFail("category")
                     gpsPointService.categorizeTrack(trackId, TRACK_CATEGORY.valueOf(newCategory))
                 }

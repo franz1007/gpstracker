@@ -24,7 +24,7 @@ export class MapComponent implements OnDestroy, OnInit {
     minZoom: 3,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   });
-  private lines: Map<number, L.GeoJSON> = new Map<number, L.GeoJSON>()
+  private lines: Map<string, L.GeoJSON> = new Map<string, L.GeoJSON>()
   private lineStyle = {
     color: "red",
   };
@@ -138,7 +138,7 @@ export class MapComponent implements OnDestroy, OnInit {
       this.pointsSubscription.unsubscribe()
     }
     tracks.forEach(track => {
-      const line = this.lines.get(track.id)
+      const line = this.lines.get(track.uuid)
       if (line === undefined) {
         const line = L.geoJSON(null,
           {
@@ -156,7 +156,7 @@ export class MapComponent implements OnDestroy, OnInit {
               }
             }
           })
-        this.lines.set(track.id, line)
+        this.lines.set(track.uuid, line)
         this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(lineString => {
           line.addData(lineString)
           line.addTo(this.map)

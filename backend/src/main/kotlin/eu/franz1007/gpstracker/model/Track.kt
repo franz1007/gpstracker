@@ -7,14 +7,18 @@ import io.github.dellisd.spatialk.geojson.dsl.feature
 import io.github.dellisd.spatialk.geojson.dsl.lineString
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 enum class TRACK_CATEGORY {
     UNCATEGORIZED, CYCLING, RUNNING, HIKING
 }
 
 @Serializable
+@OptIn(ExperimentalUuidApi::class)
 data class Track(
-    val id: Long,
+    val uuid: Uuid,
     val startTimestamp: Instant,
     val endTimestamp: Instant,
     val points: List<GpsPoint>,
@@ -32,14 +36,15 @@ data class Track(
         }
         val averageSpeedKph = (distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6
         return TrackWIthMetadata(
-            id, startTimestamp, endTimestamp, points, distanceMeters.toInt(), averageSpeedKph, category
+            uuid, startTimestamp, endTimestamp, points, distanceMeters.toInt(), averageSpeedKph, category
         )
     }
 }
 
 @Serializable
+@OptIn(ExperimentalUuidApi::class)
 data class TrackWIthMetadata(
-    val id: Long,
+    val uuid: Uuid,
     val startTimestamp: Instant,
     val endTimestamp: Instant,
     val points: List<GpsPoint>,
@@ -48,14 +53,14 @@ data class TrackWIthMetadata(
     val category: TRACK_CATEGORY
 ) {
     fun onlyMetadata(): TrackOnlyMetadata {
-        return TrackOnlyMetadata(id, startTimestamp, endTimestamp, distanceMeters, averageSpeedKph, category)
+        return TrackOnlyMetadata(uuid, startTimestamp, endTimestamp, distanceMeters, averageSpeedKph, category)
     }
 
     fun toGeoJson(): Feature = feature(geometry = lineString {
         points.forEach {
             point(it.lon, it.lat, it.altitude)
         }
-    }, id = "track$id") {
+    }, id = "track$uuid") {
         put("startTimestamp", startTimestamp.toString())
         put("endTimestamp", endTimestamp.toString())
         put("distanceMeters", distanceMeters.toString())
@@ -65,8 +70,9 @@ data class TrackWIthMetadata(
 }
 
 @Serializable
+@OptIn(ExperimentalUuidApi::class)
 data class TrackOnlyMetadata(
-    val id: Long,
+    val uuid: Uuid,
     val startTimestamp: Instant,
     val endTimestamp: Instant,
     val distanceMeters: Int,
@@ -75,8 +81,9 @@ data class TrackOnlyMetadata(
 )
 
 @Serializable
+@OptIn(ExperimentalUuidApi::class)
 data class TrackNoPoints(
-    val id: Long, val startTimestamp: Instant, val endTimestamp: Instant, val category: TRACK_CATEGORY
+    val uuid: Uuid, val startTimestamp: Instant, val endTimestamp: Instant, val category: TRACK_CATEGORY
 )
 
 data class TrackNoId(
