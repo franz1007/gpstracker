@@ -13,7 +13,7 @@ export class IdbcacheService {
   constructor() {
   }
 
-  public async getTrackFeature(id: number): Promise<{
+  public async getTrackFeature(id: string): Promise<{
     feature: Feature<GeoJSON.LineString> | null,
     startTimestampMillis: number | null;
     endTimestampMillis: number | null
@@ -33,7 +33,7 @@ export class IdbcacheService {
     })
   }
 
-  public async getMetadata(id: number): Promise<TrackMetadata | null> {
+  public async getMetadata(id: string): Promise<TrackMetadata | null> {
     const db = await this.initDB()
     return db.get("metadata", id).then((value) => {
       if (value !== undefined) {
@@ -49,14 +49,14 @@ export class IdbcacheService {
 
 
 
-  public storeFeature(id: number, feature: Feature<GeoJSON.LineString>, startTimestamp: Instant, endTimestamp: Instant) {
+  public storeFeature(id: string, feature: Feature<GeoJSON.LineString>, startTimestamp: Instant, endTimestamp: Instant) {
     this.initDB().then(db => {
       db.put("features", { feature: feature, startTimestamp: startTimestamp.toEpochMilli(), endTimestamp: endTimestamp.toEpochMilli() }, id)
       const transaction = db.transaction("features", "readwrite")
     })
   }
 
-  public storeMetadata(id: number, metadata: TrackMetadata) {
+  public storeMetadata(id: string, metadata: TrackMetadata) {
     this.initDB().then(db => {
       db.put("metadata", { metadata: metadata }, id)
     })
@@ -74,7 +74,7 @@ export class IdbcacheService {
 
 interface MyDB extends DBSchema {
   features: {
-    key: number,
+    key: string,
     value: {
       feature: Feature<GeoJSON.LineString>,
       startTimestamp: number,
@@ -82,7 +82,7 @@ interface MyDB extends DBSchema {
     };
   };
   metadata: {
-    key: number,
+    key: string,
     value: {
       metadata: TrackMetadata
     };

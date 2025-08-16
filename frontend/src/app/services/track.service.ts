@@ -26,19 +26,19 @@ export class TrackService {
   }
 
   getTrackGeoJson(track: TrackNoPoints): Observable<Feature<GeoJSON.LineString>> {
-    const trackResult = from(this.idbService.getTrackFeature(track.id).then(result => {
+    const trackResult = from(this.idbService.getTrackFeature(track.uuid).then(result => {
       if (result.feature === null || result.startTimestampMillis !== track.startTimestamp.toEpochMilli() || result.endTimestampMillis !== track.endTimestamp.toEpochMilli()) {
-        const res = this.getTrackGeoJsonFromUrl(track.id.toString())
+        const res = this.getTrackGeoJsonFromUrl(track.uuid)
         return firstValueFrom(res.pipe(observable => {
           observable.subscribe(trackFromNetwork => {
-            this.idbService.storeFeature(track.id, trackFromNetwork, track.startTimestamp, track.endTimestamp)
+            this.idbService.storeFeature(track.uuid, trackFromNetwork, track.startTimestamp, track.endTimestamp)
             console.log("stored track")
           })
           return observable
         }))
       }
       else {
-        console.log("Successfully retreived feature for Track " + track.id + " from indexeddb")
+        console.log("Successfully retreived feature for Track " + track.uuid + " from indexeddb")
         return result.feature
       }
     }))
@@ -66,7 +66,7 @@ export class TrackService {
       }
     }) as Array<TrackNoPoints>
     return tracks.map((track) => {
-      return new TrackNoPoints(track.id, track.startTimestamp, track.endTimestamp, track.category)
+      return new TrackNoPoints(track.uuid, track.startTimestamp, track.endTimestamp, track.category)
     })
   }
 
@@ -87,11 +87,11 @@ export class TrackService {
     });
 
     const test = sorted.map(async (track) => {
-      const metadata = await this.idbService.getMetadata(track.id)
+      const metadata = await this.idbService.getMetadata(track.uuid)
       if (metadata === null) {
-        const trackObject = new TrackMetadata(track.id, track.startTimestamp, track.endTimestamp, track.category)
+        const trackObject = new TrackMetadata(track.uuid, track.startTimestamp, track.endTimestamp, track.category)
 
-        fetch(this.trackMetadataUrl + "/" + trackObject.id, { signal: abortSignal }).then(response => {
+        fetch(this.trackMetadataUrl + "/" + trackObject.uuid, { signal: abortSignal }).then(response => {
           response.text().then(text => {
             const track = JSON.parse(text, (key, value) => {
               if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
@@ -103,7 +103,7 @@ export class TrackService {
             trackObject.distanceMeters = track.distanceMeters
             trackObject.averageSpeedKph = track.averageSpeedKph
             console.log("received distances")
-            this.idbService.storeMetadata(track.id, trackObject)
+            this.idbService.storeMetadata(track.uuid, trackObject)
           })
         })
         return trackObject
