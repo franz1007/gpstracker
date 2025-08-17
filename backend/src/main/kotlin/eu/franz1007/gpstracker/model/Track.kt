@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.Gpx
@@ -5,9 +7,9 @@ import eu.franz1007.gpstracker.util.SloppyMath
 import io.github.dellisd.spatialk.geojson.Feature
 import io.github.dellisd.spatialk.geojson.dsl.feature
 import io.github.dellisd.spatialk.geojson.dsl.lineString
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import java.util.UUID
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -93,7 +95,7 @@ data class TrackNoId(
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
             val points = gpx.trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
                 GpsPointNoId(
-                    timestamp = it.time ?: Instant.fromEpochMilliseconds(0),
+                    timestamp = it.time?:Instant.fromEpochMilliseconds(0),
                     lat = it.lat,
                     lon = it.lon,
                     hdop = it.hdop ?: -1.0,

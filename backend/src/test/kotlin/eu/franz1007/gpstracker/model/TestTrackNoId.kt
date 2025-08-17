@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalTime::class)
+
 package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.*
-import kotlinx.datetime.Clock
 import org.junit.Test
 import java.io.File
 import kotlin.test.assertEquals
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class TestTrackNoId {
     @Test

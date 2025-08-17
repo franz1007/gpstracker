@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.kotlinx.html)
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.postgresql)
     implementation(libs.h2)

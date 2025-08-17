@@ -2,7 +2,7 @@ package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
 import io.ktor.server.application.*
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.v1.jdbc.Database
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
