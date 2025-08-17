@@ -1,8 +1,10 @@
 package eu.franz1007.gpstracker.model
 
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@ExperimentalTime
 @Serializable
 data class GpsPoint(
     val id: Long,

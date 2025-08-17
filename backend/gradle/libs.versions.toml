@@ -1,13 +1,14 @@
 [versions]
 h2-version = "2.3.232"
-kotlin-version = "2.2.0"
+kotlin-version = "2.2.10"
 kotlinx-html-version = "0.12.0"
-ktor-version = "3.2.0"
+ktor-version = "3.2.3"
 logback-version = "1.5.18"
 postgres-version = "42.7.7"
-exposed-version = "0.61.0"
-kotlinx-datetime-version = "0.6.1"
+exposed-version = "1.0.0-beta-5"
+kotlinx-datetime-version = "0.7.1"
 spatialk-geojson-version = "0.3.0"
+kotlinx-serialization-version = "1.9.0"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
@@ -15,7 +16,7 @@ ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.
 ktor-server-sessions = { module = "io.ktor:ktor-server-sessions-jvm", version.ref = "ktor-version" }
 ktor-server-auto-head-response = { module = "io.ktor:ktor-server-auto-head-response-jvm", version.ref = "ktor-version" }
 ktor-server-host-common = { module = "io.ktor:ktor-server-host-common-jvm", version.ref = "ktor-version" }
-ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-version"}
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor-version" }
 ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages-jvm", version.ref = "ktor-version" }
 ktor-server-compression = { module = "io.ktor:ktor-server-compression-jvm", version.ref = "ktor-version" }
 ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers-jvm", version.ref = "ktor-version" }
@@ -38,8 +39,9 @@ ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "k
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-version" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor-version" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-version" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-version" }
-spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref= "spatialk-geojson-version"}
+spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref = "spatialk-geojson-version" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }

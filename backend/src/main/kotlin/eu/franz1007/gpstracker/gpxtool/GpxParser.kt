@@ -1,10 +1,13 @@
+@file:OptIn(ExperimentalTime::class)
+
 package eu.franz1007.gpstracker.gpxtool
 
-import kotlinx.datetime.Instant
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.InputStream
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 data class Metadata(val name: String, val time: Instant?)
 data class Extensions(val osmandHeading: Double?, val osmandSpeed: Double?)

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
@@ -18,8 +20,6 @@ import io.ktor.sse.*
 import io.ktor.util.collections.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import java.nio.file.Files
@@ -27,8 +27,11 @@ import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
+import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlin.time.toDuration
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
