@@ -18,7 +18,6 @@ fun Application.module() {
     val database = Database.connect(
         url = environment.config.property("storage.url").getString(),
         user = environment.config.property("storage.user").getString(),
-        driver = environment.config.property("storage.driver").getString(),
         password = environment.config.property("storage.password").getString(),
     )
     val gpsPointService = GpsPointService(database)
