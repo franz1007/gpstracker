@@ -35,6 +35,9 @@ dependencies {
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)
     implementation(libs.exposed.datetime)
+    implementation(libs.exposed.migration.core)
+    implementation(libs.exposed.migration.jdbc)
+    implementation(libs.flyway)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     implementation(libs.kotlinx.datetime)
@@ -50,4 +53,11 @@ kotlin {
 
 application {
     mainClass = "eu.franz1007.gpstracker.ApplicationKt"
+}
+
+tasks.register<JavaExec>("generateMigrationScript") {
+    group = "application"
+    description = "Generate migration script in the path exposed-migration/migrations"
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "eu.franz1007.gpstracker.database.migration.GenerateMigrationScriptKt"
 }
