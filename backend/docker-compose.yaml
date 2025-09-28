@@ -1,0 +1,13 @@
+services:
+
+  database:
+
+    image: 'postgres:latest'
+    ports:
+      - "5432:5432"
+
+    environment:
+      POSTGRES_USER: gpsuser
+      POSTGRES_PASSWORD: myPassword
+      POSTGRES_DB: gpstracker
+
