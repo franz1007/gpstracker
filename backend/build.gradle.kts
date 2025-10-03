@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.exposed.migration.core)
     implementation(libs.exposed.migration.jdbc)
     implementation(libs.flyway)
+    implementation(libs.flyway.postgres)
     implementation(libs.ktor.server.netty)
     implementation(libs.logback.classic)
     implementation(libs.kotlinx.datetime)

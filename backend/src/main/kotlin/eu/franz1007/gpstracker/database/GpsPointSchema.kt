@@ -59,13 +59,6 @@ class GpsPointService(database: Database) {
         override val primaryKey = PrimaryKey(id)
     }
 
-    init {
-        transaction(database) {
-            addLogger(StdOutSqlLogger)
-            SchemaUtils.create(GpsPositions, Tracks, GpsPoints)
-        }
-    }
-
     suspend fun addPoint(point: GpsPointNoId): Long {
         return dbQuery {
             val latest =

@@ -1,6 +1,8 @@
 package eu.franz1007.gpstracker.database.migration
 
 import eu.franz1007.gpstracker.database.GpsPointService
+import io.ktor.util.cio.readChannel
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -21,7 +23,9 @@ val database = Database.connect(
 )
 
 fun main() {
+    val flyway = Flyway.configure().dataSource(URL, USER, PASSWORD).baselineOnMigrate(true).load()
     transaction(database) {
+        flyway.migrate()
         generateMigrationScript()
     }
 }
@@ -29,11 +33,17 @@ fun main() {
 @OptIn(ExperimentalDatabaseMigrationApi::class)
 fun generateMigrationScript() {
     File(MIGRATIONS_DIRECTORY).mkdirs()
-    MigrationUtils.generateMigrationScript(
+    val migrationFile = MigrationUtils.generateMigrationScript(
         GpsPointService.GpsPositions, GpsPointService.Tracks, GpsPointService.GpsPoints,
         scriptDirectory = MIGRATIONS_DIRECTORY,
         scriptName = getNextMigrationName(Path(MIGRATIONS_DIRECTORY)),
     )
+
+    //Delete the file if it is empty
+    val cp = migrationFile.inputStream().use {
+        it.read()
+    }
+    if (cp == -1) migrationFile.delete()
 }
 
 fun getNextMigrationName(path: Path): String {
