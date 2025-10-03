@@ -44,5 +44,5 @@ fun getNextMigrationName(path: Path): String {
             } ?: 1
     }
 
-    return "V${version}__Migration.sql"
+    return "V${version}__Migration"
 }

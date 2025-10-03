@@ -13,17 +13,17 @@ class GenerateMigrationScriptTest {
     @Test
     fun getNextMigrationName() {
         val tempDir = Path("/tmp/test${Uuid.random()}").createDirectories()
-        assertEquals("V1__Migration.sql", getNextMigrationName(tempDir))
+        assertEquals("V1__Migration", getNextMigrationName(tempDir))
         tempDir.let{
             it.resolve("V1__Migration.sql").createFile()
             it.resolve("V1.4__Migration.sql").createFile()
             it.resolve("V2__Somename.sql").createFile()
         }
-        assertEquals("V3__Migration.sql", getNextMigrationName(tempDir))
+        assertEquals("V3__Migration", getNextMigrationName(tempDir))
         tempDir.resolve("V2.2__Migration.sql").createFile()
-        assertEquals("V3__Migration.sql", getNextMigrationName(tempDir))
+        assertEquals("V3__Migration", getNextMigrationName(tempDir))
         tempDir.resolve("V10__Migration.sql").createFile()
-        assertEquals("V11__Migration.sql", getNextMigrationName(tempDir))
+        assertEquals("V11__Migration", getNextMigrationName(tempDir))
 
     }
 
