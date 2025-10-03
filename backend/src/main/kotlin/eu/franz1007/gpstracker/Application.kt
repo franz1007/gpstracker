@@ -2,6 +2,7 @@ package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
 import io.ktor.server.application.*
+import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
 
 
@@ -15,10 +16,14 @@ fun Application.module() {
     configureSockets()
     configureSerialization()
     configureRouting()
+    val databaseUrl = environment.config.property("storage.url").getString()
+    val databaseUser = environment.config.property("storage.user").getString()
+    val databasePassword = environment.config.property("storage.password").getString()
+    val flyway =
+        Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true).load()
+    flyway.migrate()
     val database = Database.connect(
-        url = environment.config.property("storage.url").getString(),
-        user = environment.config.property("storage.user").getString(),
-        password = environment.config.property("storage.password").getString(),
+        url = databaseUrl, user = databaseUser, password = databasePassword
     )
     val gpsPointService = GpsPointService(database)
     configureDatabases(gpsPointService)

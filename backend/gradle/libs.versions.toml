@@ -46,6 +46,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime-version" }
 spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref = "spatialk-geojson-version" }
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway-version" }
+flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway-version" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
