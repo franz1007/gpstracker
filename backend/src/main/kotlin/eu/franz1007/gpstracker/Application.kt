@@ -4,6 +4,7 @@ import eu.franz1007.gpstracker.database.GpsPointService
 import io.ktor.server.application.*
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
@@ -21,10 +22,12 @@ fun Application.module() {
     val databasePassword = environment.config.property("storage.password").getString()
     val flyway =
         Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true).load()
-    flyway.migrate()
     val database = Database.connect(
         url = databaseUrl, user = databaseUser, password = databasePassword
     )
+    transaction {
+        flyway.migrate()
+    }
     val gpsPointService = GpsPointService(database)
     configureDatabases(gpsPointService)
 
