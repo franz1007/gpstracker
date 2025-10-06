@@ -10,6 +10,7 @@ kotlinx-datetime-version = "0.7.1"
 spatialk-geojson-version = "0.3.0"
 kotlinx-serialization-version = "1.9.0"
 flyway-version = "11.13.2"
+hikari-version = "7.0.2"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
@@ -47,6 +48,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref = "spatialk-geojson-version" }
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway-version" }
 flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway-version" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari-version"}
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
