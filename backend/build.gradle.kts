@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.ktor.server.sse)
     implementation(libs.spatialk.geojson)
     testImplementation(libs.kotlin.test.junit)
+    implementation(libs.hikari)
 }
 
 kotlin {

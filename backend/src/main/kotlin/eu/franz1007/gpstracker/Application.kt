@@ -1,5 +1,7 @@
 package eu.franz1007.gpstracker
 
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import eu.franz1007.gpstracker.database.GpsPointService
 import io.ktor.server.application.*
 import org.flywaydb.core.Flyway
@@ -22,8 +24,15 @@ fun Application.module() {
     val databasePassword = environment.config.property("storage.password").getString()
     val flyway =
         Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true).load()
+    val hikariPool = HikariDataSource(HikariConfig().apply {
+        jdbcUrl = databaseUrl
+        username = databaseUser
+        password = databasePassword
+        maximumPoolSize = 10
+        isAutoCommit = false
+    })
     val database = Database.connect(
-        url = databaseUrl, user = databaseUser, password = databasePassword
+        hikariPool
     )
     transaction {
         flyway.migrate()
