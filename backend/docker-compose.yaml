@@ -5,9 +5,13 @@ services:
     image: 'postgres:latest'
     ports:
       - "5432:5432"
-
+    volumes:
+     - ./postgres-data:/var/lib/postgresql
     environment:
       POSTGRES_USER: gpsuser
       POSTGRES_PASSWORD: myPassword
       POSTGRES_DB: gpstracker
+
+#pg_dump -C -h localhost -U gpsuser gpstracker > gpstracker.sql #dump database
+# psql -U gpsuser gpstracker
 
