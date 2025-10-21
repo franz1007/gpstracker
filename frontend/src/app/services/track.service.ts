@@ -29,13 +29,10 @@ export class TrackService {
     const trackResult = from(this.idbService.getTrackFeature(track.uuid).then(result => {
       if (result.feature === null || result.startTimestampMillis !== track.startTimestamp.toEpochMilli() || result.endTimestampMillis !== track.endTimestamp.toEpochMilli()) {
         const res = this.getTrackGeoJsonFromUrl(track.uuid)
-        return firstValueFrom(res.pipe(observable => {
-          observable.subscribe(trackFromNetwork => {
-            this.idbService.storeFeature(track.uuid, trackFromNetwork, track.startTimestamp, track.endTimestamp)
-            console.log("stored track")
-          })
-          return observable
-        }))
+        return firstValueFrom(res.pipe(map((feature, index) => {
+          this.storeGeoJson(feature, track.uuid, track.startTimestamp, track.endTimestamp)
+          return feature
+        })))
       }
       else {
         console.log("Successfully retreived feature for Track " + track.uuid + " from indexeddb")
@@ -45,8 +42,13 @@ export class TrackService {
     return trackResult
   }
 
+  async storeGeoJson(track: Feature<GeoJSON.LineString>, uuid: string, startTimestamp: Instant, endTimestamp: Instant) {
+    this.idbService.storeFeature(uuid, track, startTimestamp, endTimestamp)
+    console.log("stored track")
+  }
 
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
+    console.log("getting track " + id)
     return this.http.get<Feature<GeoJSON.LineString>>(this.geoJsonUrl + "/" + id)
   }
 

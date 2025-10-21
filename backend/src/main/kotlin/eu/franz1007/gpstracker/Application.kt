@@ -22,9 +22,15 @@ fun Application.module() {
     val databaseUrl = environment.config.property("storage.url").getString()
     val databaseUser = environment.config.property("storage.user").getString()
     val databasePassword = environment.config.property("storage.password").getString()
+    val hikari = HikariDataSource(HikariConfig().apply {
+        jdbcUrl = databaseUrl
+        username = databaseUser
+        password = databasePassword
+        maximumPoolSize = 2
+    })
     val flyway =
         Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true).load()
-    val database = Database.connect(url = databaseUrl, user = databaseUser, password = databasePassword)
+    val database = Database.connect(hikari)
     transaction {
         flyway.migrate()
     }
