@@ -4,18 +4,11 @@ import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.datetime.timestamp
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.jetbrains.exposed.v1.jdbc.update
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -242,31 +235,7 @@ class GpsPointService(database: Database) {
                         it[Tracks.category]
                     )
                 }.singleOrNull() ?: return@dbQuery null
-            val points = pointsByTrack(trackId)
-            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
-        }
-    }
-
-    suspend fun readTrack(uuid: Uuid): Track? {
-        return dbQuery {
-            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
-                .where { Tracks.uuid eq uuid.toJavaUuid() }.map {
-                    Quintuple(
-                        it[Tracks.id],
-                        it[Tracks.uuid],
-                        it[Tracks.startTimestamp],
-                        it[Tracks.endTimestamp],
-                        it[Tracks.category]
-                    )
-                }.singleOrNull() ?: return@dbQuery null
-            val points = pointsByTrack(trackId)
-            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
-        }
-    }
-
-    suspend fun pointsByTrack(id: Long): List<GpsPoint> {
-        return dbQuery {
-            GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.trackId eq id }
+            val points = GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.trackId eq trackId }
                 .orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
                     GpsPoint(
                         it[GpsPoints.id],
@@ -283,6 +252,40 @@ class GpsPointService(database: Database) {
                         it[GpsPoints.edfa]
                     )
                 }
+            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
+        }
+    }
+
+    suspend fun readTrack(uuid: Uuid): Track?{
+        return dbQuery {
+            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
+                .where { Tracks.uuid eq uuid.toJavaUuid() }.map {
+                    Quintuple(
+                        it[Tracks.id],
+                        it[Tracks.uuid],
+                        it[Tracks.startTimestamp],
+                        it[Tracks.endTimestamp],
+                        it[Tracks.category]
+                    )
+                }.singleOrNull() ?: return@dbQuery null
+            val points = GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.trackId eq trackId }
+                .orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
+                    GpsPoint(
+                        it[GpsPoints.id],
+                        it[GpsPoints.timestamp],
+                        it[GpsPositions.lat],
+                        it[GpsPositions.lon],
+                        it[GpsPoints.hdop],
+                        it[GpsPoints.altitude],
+                        it[GpsPoints.speed],
+                        it[GpsPoints.bearing],
+                        it[GpsPoints.eta],
+                        it[GpsPoints.etfa],
+                        it[GpsPoints.eda],
+                        it[GpsPoints.edfa]
+                    )
+                }
+            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
         }
     }
 
