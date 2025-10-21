@@ -2,7 +2,7 @@
 Description=Ktor backend for Gpstracker
 
 [Service]
-ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -jar /opt/gpstracker-backend/eu.franz1007.gpstracker-all.jar
+ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -jar /opt/gpstracker-backend/eu.franz1007.gpstracker-all.jar -P:storage.password=somePassword
 
 [Install]
 WantedBy=default.target
