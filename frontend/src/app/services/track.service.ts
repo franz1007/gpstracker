@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, from, map, Observable } from 'rxjs';
 import { Instant } from '@js-joda/core';
@@ -17,6 +17,7 @@ export class TrackService {
   tracksUrl: string = environment.apiUrl + "/api/tracks"
   trackMetadataUrl: string = environment.apiUrl + "/api/tracks/metadata"
   categoriesUrl: string = environment.apiUrl + "/api/trackCategories"
+  updateCategoriesUrl: string = environment.apiUrl + "/api/tracks/updateCategory"
 
 
   constructor(private http: HttpClient, private idbService: IdbcacheService) { }
@@ -116,4 +117,19 @@ export class TrackService {
     })
     return await Promise.all(test)
   }
+
+  updateCategory(trackUuid: string, newCategory: string): Promise<string | null> {
+    const params = new HttpParams()
+      .set('trackid', trackUuid)
+      .set('category', newCategory);
+    return firstValueFrom(this.http.post(this.updateCategoriesUrl, null, { params: params })).then((value => {
+      console.log(value)
+      return null;
+    })).catch(reason => {
+      console.log("CategorizeTrack failed: " + reason);
+      return reason as string
+    })
+  }
+
+
 }

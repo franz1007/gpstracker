@@ -2,7 +2,7 @@ import { Component, effect, resource } from '@angular/core';
 import { TableModule } from 'primeng/table';
 import { TrackMetadata } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../services/track.service';
-import { SelectModule } from 'primeng/select';
+import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { TagModule } from 'primeng/tag';
 
@@ -16,17 +16,6 @@ import { TagModule } from 'primeng/tag';
 export class TrackmanagerComponent {
   categories = ["CYCLING", "RUNNING"];
 
-
-  getSeverity(status: string) {
-    switch (status) {
-      case 'CYCLING':
-        return 'CYCLING';
-
-      case 'RUNNING':
-        return 'RUNNING';
-      default: return "test"
-    }
-  }
 
   tracksResource = resource(
     {
@@ -47,7 +36,26 @@ export class TrackmanagerComponent {
         this.tracks = value;
       }
     })
-    trackService.getTrackCategories().then(result => this.categories = result)
+    trackService.getTrackCategories().then(result => {
+      this.categories = result;
+    })
 
+  }
+  onCategoryChange(value: string, trackUuid: string) {
+    console.log("category of track changed")
+    console.log(value)
+    console.log(trackUuid)
+    const track = this.tracks.find(track => track.uuid == trackUuid)
+    if (track != null) {
+      if (this.categories.includes(value)) {
+        this.trackService.updateCategory(trackUuid, value)
+      }
+      else{
+        //TODO invalid values
+      }
+    }
+    else {
+      console.error("Changed track with " + trackUuid + " not found in array")
+    }
   }
 }

@@ -3,10 +3,8 @@
 package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
-import eu.franz1007.gpstracker.gpxtool.GpxParser
 import eu.franz1007.gpstracker.model.GpsPointNoId
 import eu.franz1007.gpstracker.model.TRACK_CATEGORY
-import eu.franz1007.gpstracker.model.TrackNoId
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -22,11 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
-import java.nio.file.Files
 import java.util.*
-import kotlin.io.path.Path
-import kotlin.io.path.inputStream
-import kotlin.io.path.isRegularFile
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -37,7 +31,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @OptIn(ExperimentalUuidApi::class)
-fun Application.configureDatabases(gpsPointService: GpsPointService) {
+fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
     val connections = Collections.synchronizedSet<DefaultWebSocketServerSession>(LinkedHashSet())
     val sseConnections = ConcurrentSet<ServerSSESession>()
     routing {
@@ -129,7 +123,12 @@ fun Application.configureDatabases(gpsPointService: GpsPointService) {
                         }
                     }
                     val newCategory = call.parameters.getOrFail("category")
-                    gpsPointService.categorizeTrack(trackId, TRACK_CATEGORY.valueOf(newCategory))
+                    val changedTrack = gpsPointService.categorizeTrack(trackId, TRACK_CATEGORY.valueOf(newCategory))
+                    if (changedTrack == null) {
+                        call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
+                    } else {
+                        call.respond(changedTrack)
+                    }
                 }
 
                 get("/latest") {

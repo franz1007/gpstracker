@@ -95,11 +95,19 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun categorizeTrack(trackId: Uuid, newCategory: TRACK_CATEGORY) {
-        dbQuery {
-            Tracks.update({ Tracks.uuid eq trackId.toJavaUuid() }) {
+    suspend fun categorizeTrack(trackId: Uuid, newCategory: TRACK_CATEGORY): TrackNoPoints? {
+        return dbQuery {
+            return@dbQuery Tracks.updateReturning(where = { Tracks.uuid eq trackId.toJavaUuid() }) {
+                it[uuid] = Uuid.random().toJavaUuid()
                 it[category] = newCategory
-            }
+            }.map {
+                TrackNoPoints(
+                    it[Tracks.uuid].toKotlinUuid(),
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category]
+                )
+            }.singleOrNull()
         }
     }
 
@@ -256,7 +264,7 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readTrack(uuid: Uuid): Track?{
+    suspend fun readTrack(uuid: Uuid): Track? {
         return dbQuery {
             val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
                 .where { Tracks.uuid eq uuid.toJavaUuid() }.map {

@@ -16,12 +16,8 @@
             <th>
                 <p-columnFilter field="category" matchMode="equals" [showClearButton]="false" [showMenu]="false">
                     <ng-template #filter let-value let-filter="filterCallback">
-                        <p-select
-                            [ngModel]="value"
-                            [options]="categories"
-                            (onChange)="filter($event.value)"
-                            placeholder="Select One"
-                            [showClear]="true">
+                        <p-select [ngModel]="value" [options]="categories" (onChange)="filter($event.value)"
+                            placeholder="Select One" [showClear]="true">
                         </p-select>
                     </ng-template>
                 </p-columnFilter>
@@ -34,7 +30,10 @@
             <td>{{ track.durationString }}</td>
             <td>{{ track.distanceMeters }}</td>
             <td>{{ track.averageSpeedKph }}</td>
-            <td>{{ track.category }}</td>
+            <td>
+                <p-select [options]="categories" [(ngModel)]="track.category"
+                    (onChange)="onCategoryChange($event.value, track.uuid)" />
+            </td>
         </tr>
     </ng-template>
 </p-table>

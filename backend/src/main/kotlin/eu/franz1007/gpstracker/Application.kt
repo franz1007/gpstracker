@@ -35,6 +35,6 @@ fun Application.module() {
         flyway.migrate()
     }
     val gpsPointService = GpsPointService(database)
-    configureDatabases(gpsPointService)
+    configureGpsRoutes(gpsPointService)
 
 }
