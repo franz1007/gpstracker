@@ -13,6 +13,7 @@ export class IdbcacheService {
   constructor() {
   }
 
+  //TODO better type
   public async getTrackFeature(id: string): Promise<{
     feature: Feature<GeoJSON.LineString> | null,
     startTimestampMillis: number | null;
@@ -62,6 +63,34 @@ export class IdbcacheService {
     })
   }
 
+
+  public updateCategory(oldId: string, newId: string, newCategory: string) {
+    this.initDB().then(db => {
+      this.getMetadata(oldId).then(metadata => {
+        if (metadata != null) {
+          metadata.uuid = newId
+          metadata.category = newCategory
+          db.put("metadata", { metadata: metadata }, newId).catch(reason => {
+            console.log("put metadata to db in updateCategory failed")
+          })
+          db.delete("metadata", oldId).catch(reason => {
+            console.log("delete metadata from db failed")
+          })
+        }
+      })
+      this.getTrackFeature(oldId).then(data => {
+        if (data.feature != null && data.endTimestampMillis != null && data.startTimestampMillis != null) {
+          db.put("features", { feature: data.feature, startTimestamp: data.startTimestampMillis, endTimestamp: data.endTimestampMillis }, newId).catch(reason => {
+            console.log("put feature to db in updateCategory failed")
+          })
+          db.delete("features", oldId).catch(reason => {
+            console.log("delete feature from db failed")
+          })
+        }
+      })
+    })
+  }
+
   async initDB() {
     return await openDB<MyDB>('my-db', 3, {
       upgrade(db) {
@@ -71,6 +100,7 @@ export class IdbcacheService {
     });
   }
 }
+
 
 interface MyDB extends DBSchema {
   features: {

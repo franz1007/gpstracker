@@ -29,6 +29,7 @@ export class TrackService {
   getTrackGeoJson(track: TrackNoPoints): Observable<Feature<GeoJSON.LineString>> {
     const trackResult = from(this.idbService.getTrackFeature(track.uuid).then(result => {
       if (result.feature === null || result.startTimestampMillis !== track.startTimestamp.toEpochMilli() || result.endTimestampMillis !== track.endTimestamp.toEpochMilli()) {
+        console.log("Track "+ track.uuid + " not yet in indexeddb, retreiving")
         const res = this.getTrackGeoJsonFromUrl(track.uuid)
         return firstValueFrom(res.pipe(map((feature, index) => {
           this.storeGeoJson(feature, track.uuid, track.startTimestamp, track.endTimestamp)
@@ -118,16 +119,23 @@ export class TrackService {
     return await Promise.all(test)
   }
 
-  updateCategory(trackUuid: string, newCategory: string): Promise<string | null> {
+  async updateCategory(trackUuid: string, newCategory: string): Promise<null | TrackNoPoints> {
     const params = new HttpParams()
       .set('trackid', trackUuid)
       .set('category', newCategory);
-    return firstValueFrom(this.http.post(this.updateCategoriesUrl, null, { params: params })).then((value => {
-      console.log(value)
-      return null;
+    return await firstValueFrom(this.http.post(this.updateCategoriesUrl, null, { params: params , responseType: "text"})).then((text => {
+      const track = JSON.parse(text, (key, value) => {
+        if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+          return Instant.parse(value);
+        } else {
+          return value;
+        }
+      }) as TrackNoPoints
+      // TODO update idb (uuid and category is changed)
+      return track;
     })).catch(reason => {
       console.log("CategorizeTrack failed: " + reason);
-      return reason as string
+      return null;
     })
   }
 

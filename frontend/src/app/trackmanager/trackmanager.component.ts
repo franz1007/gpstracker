@@ -48,9 +48,15 @@ export class TrackmanagerComponent {
     const track = this.tracks.find(track => track.uuid == trackUuid)
     if (track != null) {
       if (this.categories.includes(value)) {
-        this.trackService.updateCategory(trackUuid, value)
+        this.trackService.updateCategory(trackUuid, value).then(result => {
+          if (result != null) {
+            console.log("new category: " + result.category)
+            track.category = result.category
+            track.uuid = result.uuid
+          }
+        })
       }
-      else{
+      else {
         //TODO invalid values
       }
     }
