@@ -12,8 +12,6 @@ import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTrans
 import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class GpsPointService(database: Database) {
@@ -97,15 +95,12 @@ class GpsPointService(database: Database) {
 
     suspend fun categorizeTrack(trackId: Uuid, newCategory: TRACK_CATEGORY): TrackNoPoints? {
         return dbQuery {
-            return@dbQuery Tracks.updateReturning(where = { Tracks.uuid eq trackId.toJavaUuid() }) {
-                it[uuid] = Uuid.random().toJavaUuid()
+            return@dbQuery Tracks.updateReturning(where = { Tracks.uuid eq trackId }) {
+                it[uuid] = Uuid.random()
                 it[category] = newCategory
             }.map {
                 TrackNoPoints(
-                    it[Tracks.uuid].toKotlinUuid(),
-                    it[Tracks.startTimestamp],
-                    it[Tracks.endTimestamp],
-                    it[Tracks.category]
+                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
                 )
             }.singleOrNull()
         }
@@ -208,10 +203,7 @@ class GpsPointService(database: Database) {
         return dbQuery {
             Tracks.selectAll().map {
                 TrackNoPoints(
-                    it[Tracks.uuid].toKotlinUuid(),
-                    it[Tracks.startTimestamp],
-                    it[Tracks.endTimestamp],
-                    it[Tracks.category]
+                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
                 )
             }
         }
@@ -221,10 +213,7 @@ class GpsPointService(database: Database) {
         return dbQuery {
             Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
                 TrackNoPoints(
-                    it[Tracks.uuid].toKotlinUuid(),
-                    it[Tracks.startTimestamp],
-                    it[Tracks.endTimestamp],
-                    it[Tracks.category]
+                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
                 )
             }.singleOrNull()
         }
@@ -260,14 +249,14 @@ class GpsPointService(database: Database) {
                         it[GpsPoints.edfa]
                     )
                 }
-            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
+            Track(trackUuid, startTimestamp, endTimestamp, points, category)
         }
     }
 
     suspend fun readTrack(uuid: Uuid): Track? {
         return dbQuery {
             val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
-                .where { Tracks.uuid eq uuid.toJavaUuid() }.map {
+                .where { Tracks.uuid eq uuid }.map {
                     Quintuple(
                         it[Tracks.id],
                         it[Tracks.uuid],
@@ -293,7 +282,7 @@ class GpsPointService(database: Database) {
                         it[GpsPoints.edfa]
                     )
                 }
-            Track(trackUuid.toKotlinUuid(), startTimestamp, endTimestamp, points, category)
+            Track(trackUuid, startTimestamp, endTimestamp, points, category)
         }
     }
 
