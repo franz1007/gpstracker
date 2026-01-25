@@ -19,7 +19,7 @@ export class TrackmanagerComponent {
 
   tracksResource = resource(
     {
-      loader: ({ request, abortSignal }): Promise<Array<TrackMetadata>> => {
+      loader: ({ abortSignal }): Promise<Array<TrackMetadata>> => {
         console.log("trying to load resource")
         const promise = this.trackService.getAllTracksWithMetadata(abortSignal);
         return promise

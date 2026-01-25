@@ -83,7 +83,7 @@ export class TrackerComponent {
 
   private trackResource = resource(
     {
-      loader: ({ request, abortSignal }): Promise<Array<TrackNoPoints>> => {
+      loader: ({ abortSignal }): Promise<Array<TrackNoPoints>> => {
         console.log("trying to load resource")
         const promise = this.trackService.getAllTracks(abortSignal);
         return promise
