@@ -11,6 +11,8 @@ spatialk-geojson-version = "0.3.0"
 kotlinx-serialization-version = "1.9.0"
 flyway-version = "11.12.0"
 hikari-version = "7.0.1"
+postgis-version = "2025.1.1"
+testcontainers-version = "2.0.3"
 
 [libraries]
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor-version" }
@@ -49,6 +51,8 @@ spatialk-geojson = { module = "io.github.dellisd.spatialk:geojson", version.ref 
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway-version" }
 flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway-version" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari-version"}
+postgis = { module = "net.postgis:postgis-jdbc", version.ref = "postgis-version"}
+testcontainers-postgres = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers-version" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }
