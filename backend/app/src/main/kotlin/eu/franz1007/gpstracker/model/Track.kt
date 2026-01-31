@@ -36,7 +36,8 @@ data class Track(
                 acc.copy(second = next)
             }
         }
-        val averageSpeedKph = (distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6
+        val averageSpeedKph =
+            ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { it.isFinite() } ?: 0.0
         return TrackWIthMetadata(
             uuid, startTimestamp, endTimestamp, points, distanceMeters.toInt(), averageSpeedKph, category
         )
@@ -95,7 +96,7 @@ data class TrackNoId(
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
             val points = gpx.trks.flatMap { it.trksegList }.flatMap { it.trkptList }.sortedBy { it.time }.map {
                 GpsPointNoId(
-                    timestamp = it.time?:Instant.fromEpochMilliseconds(0),
+                    timestamp = it.time ?: Instant.fromEpochMilliseconds(0),
                     lat = it.lat,
                     lon = it.lon,
                     hdop = it.hdop ?: -1.0,
