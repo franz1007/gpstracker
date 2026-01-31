@@ -46,7 +46,6 @@ class GpsPointService(database: Database) {
         val edfa = integer("edfa")
         val positionId = long("position_id") references GpsPositions.id
         val trackId = long("track_id") references Tracks.id
-
         override val primaryKey = PrimaryKey(id)
     }
 
