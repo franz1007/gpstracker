@@ -29,7 +29,7 @@
             <td>{{ track.startTimestampString }}</td>
             <td>{{ track.durationString }}</td>
             <td>{{ track.distanceMeters }}</td>
-            <td>{{ track.averageSpeedKph }}</td>
+            <td>{{ track.averageSpeedKph.toFixed(4) }}</td>
             <td>
                 <p-select [options]="categories" [(ngModel)]="track.category"
                     (onChange)="onCategoryChange($event.value, track.uuid)" />
