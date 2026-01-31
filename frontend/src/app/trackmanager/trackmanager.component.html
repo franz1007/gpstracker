@@ -16,7 +16,7 @@
             <th>
                 <p-columnFilter field="category" matchMode="equals" [showClearButton]="false" [showMenu]="false">
                     <ng-template #filter let-value let-filter="filterCallback">
-                        <p-select [ngModel]="value" [options]="categories" (onChange)="filter($event.value)"
+                        <p-select [ngModel]="value" [options]="categories" appendTo="body" (onChange)="filter($event.value)"
                             placeholder="Select One" [showClear]="true">
                         </p-select>
                     </ng-template>
