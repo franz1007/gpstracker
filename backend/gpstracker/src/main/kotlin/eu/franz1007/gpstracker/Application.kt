@@ -28,12 +28,10 @@ fun Application.module() {
         password = databasePassword
         maximumPoolSize = 2
     })
-    val flyway =
-        Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true).load()
+    val flyway = Flyway.configure().dataSource(databaseUrl, databaseUser, databasePassword).baselineOnMigrate(true)
+        .validateMigrationNaming(true).load()
     val database = Database.connect(hikari)
-    transaction {
-        flyway.migrate()
-    }
+    flyway.migrate()
     val gpsPointService = GpsPointService(database)
     configureGpsRoutes(gpsPointService)
 

@@ -66,3 +66,6 @@ tasks.register<JavaExec>("generateMigrationScript") {
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass = "eu.franz1007.gpstracker.database.migration.GenerateMigrationScriptKt"
 }
+
+// Necessary for flyway to work
+tasks.shadowJar { mergeServiceFiles() }

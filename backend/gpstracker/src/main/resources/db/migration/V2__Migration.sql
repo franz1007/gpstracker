@@ -1,4 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS postgis;
 ALTER TABLE gpspoints ADD "location" GEOGRAPHY(PointZ, 4326);
 
 UPDATE gpspoints gp
