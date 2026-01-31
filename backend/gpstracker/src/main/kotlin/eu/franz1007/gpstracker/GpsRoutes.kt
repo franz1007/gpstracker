@@ -95,7 +95,10 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                             if (track == null) {
                                 call.respond("")
                             } else {
-                                call.respond(track.calculateMetadata().toGeoJson().json())
+                                call.respondText(
+                                    track.calculateMetadata().toGeoJson().json(),
+                                    contentType = ContentType.Application.Json
+                                )
                             }
                         }
 
@@ -106,7 +109,10 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                                 call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
                             } else {
                                 call.respond(
-                                    track.calculateMetadata().toGeoJson().json()
+                                    call.respondText(
+                                        track.calculateMetadata().toGeoJson().json(),
+                                        contentType = ContentType.Application.Json
+                                    )
                                 )
                             }
                         }
