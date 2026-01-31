@@ -1,6 +1,8 @@
-package eu.franz1007.exposed.gis.postgis
+package eu.franz1007.postgis
 
 import eu.franz1007.exposed.gis.core.models.Point
+import eu.franz1007.exposed.gis.postgis.pointGeography
+import eu.franz1007.exposed.gis.postgis.pointGeometry
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -51,9 +53,9 @@ class PointColumnTypeTest {
             addLogger(StdOutSqlLogger)
             println("inserting")
             PositionsTable.insert {
-                it[id] = 1
-                it[location] = positionGreenwich
-                it[geometryLocation] = otherPosition
+                it[PositionsTable.id] = 1
+                it[PositionsTable.location] = positionGreenwich
+                it[PositionsTable.geometryLocation] = otherPosition
             }
             println("inserted")
         }
