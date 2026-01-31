@@ -1,5 +1,7 @@
 package eu.franz1007.gpstracker.database
 
+import eu.franz1007.exposed.gis.core.models.Point
+import eu.franz1007.exposed.gis.postgis.pointGeography
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
@@ -25,26 +27,17 @@ class GpsPointService(database: Database) {
         override val primaryKey = PrimaryKey(id)
     }
 
-    object GpsPositions : Table() {
-        val id = long("id").autoIncrement()
-        val lat = double("lat")
-        val lon = double("lon")
-
-        override val primaryKey = PrimaryKey(id)
-    }
-
     object GpsPoints : Table() {
         val id = long("id").autoIncrement()
         val timestamp = timestamp("timestamp")
         val hdop = double("hdop")
-        val altitude = double("altitude")
         val speed = double("speed")
         val bearing = double("bearing")
         val eta = timestamp("eta")
         val etfa = timestamp("etfa")
         val eda = integer("eda")
         val edfa = integer("edfa")
-        val positionId = long("position_id") references GpsPositions.id
+        val location = pointGeography("location", srid = 4326)
         val trackId = long("track_id") references Tracks.id
         override val primaryKey = PrimaryKey(id)
     }
@@ -67,23 +60,17 @@ class GpsPointService(database: Database) {
 
             }
 
-            val newPositionId = GpsPositions.insert {
-                it[lat] = point.lat
-                it[lon] = point.lon
-            }[GpsPositions.id]
-
             val newPointId = GpsPoints.insert {
                 it[timestamp] = point.timestamp
                 it[hdop] = point.hdop
-                it[altitude] = point.altitude
                 it[speed] = point.speed
                 it[bearing] = point.bearing
                 it[eta] = point.eta
                 it[etfa] = point.etfa
                 it[eda] = point.eda
                 it[edfa] = point.edfa
-                it[positionId] = newPositionId
                 it[trackId] = currentTrackId
+                it[location] = Point(point.lat, point.lon, point.altitude)
             }[GpsPoints.id]
             Tracks.update({ Tracks.id eq currentTrackId }) {
                 it[endTimestamp] = point.timestamp
@@ -113,22 +100,17 @@ class GpsPointService(database: Database) {
                 it[category] = track.category
             }[Tracks.id]
             track.points.forEach { point ->
-                val newPositionId = GpsPositions.insert {
-                    it[lat] = point.lat
-                    it[lon] = point.lon
-                }[GpsPositions.id]
                 GpsPoints.insert {
                     it[timestamp] = point.timestamp
                     it[hdop] = point.hdop
-                    it[altitude] = point.altitude
                     it[speed] = point.speed
                     it[bearing] = point.bearing
                     it[eta] = point.eta
                     it[etfa] = point.etfa
                     it[eda] = point.eda
                     it[edfa] = point.edfa
-                    it[positionId] = newPositionId
                     it[trackId] = id
+                    it[location] = Point(point.lon, point.lat, point.altitude)
                 }[GpsPoints.id]
             }
             return@dbQuery id
@@ -137,14 +119,14 @@ class GpsPointService(database: Database) {
 
     suspend fun read(id: Long): GpsPoint? {
         return dbQuery {
-            GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.id eq id }.map {
+            GpsPoints.selectAll().where { GpsPoints.id eq id }.map {
                 GpsPoint(
                     it[GpsPoints.id],
                     it[GpsPoints.timestamp],
-                    it[GpsPositions.lat],
-                    it[GpsPositions.lon],
+                    it[GpsPoints.location].y,
+                    it[GpsPoints.location].x,
                     it[GpsPoints.hdop],
-                    it[GpsPoints.altitude],
+                    it[GpsPoints.location].z,
                     it[GpsPoints.speed],
                     it[GpsPoints.bearing],
                     it[GpsPoints.eta],
@@ -158,14 +140,14 @@ class GpsPointService(database: Database) {
 
     suspend fun readAllPoints(): List<GpsPoint> {
         return dbQuery {
-            GpsPoints.leftJoin(GpsPositions).selectAll().map {
+            GpsPoints.selectAll().map {
                 GpsPoint(
                     it[GpsPoints.id],
                     it[GpsPoints.timestamp],
-                    it[GpsPositions.lat],
-                    it[GpsPositions.lon],
+                    it[GpsPoints.location].y,
+                    it[GpsPoints.location].x,
                     it[GpsPoints.hdop],
-                    it[GpsPoints.altitude],
+                    it[GpsPoints.location].z,
                     it[GpsPoints.speed],
                     it[GpsPoints.bearing],
                     it[GpsPoints.eta],
@@ -179,14 +161,14 @@ class GpsPointService(database: Database) {
 
     suspend fun readLatestPoints(limit: Int): List<GpsPoint> {
         return dbQuery {
-            GpsPoints.leftJoin(GpsPositions).selectAll().orderBy(GpsPoints.timestamp, SortOrder.DESC).limit(limit).map {
+            GpsPoints.selectAll().orderBy(GpsPoints.timestamp, SortOrder.DESC).limit(limit).map {
                 GpsPoint(
                     it[GpsPoints.id],
                     it[GpsPoints.timestamp],
-                    it[GpsPositions.lat],
-                    it[GpsPositions.lon],
+                    it[GpsPoints.location].y,
+                    it[GpsPoints.location].x,
                     it[GpsPoints.hdop],
-                    it[GpsPoints.altitude],
+                    it[GpsPoints.location].z,
                     it[GpsPoints.speed],
                     it[GpsPoints.bearing],
                     it[GpsPoints.eta],
@@ -231,23 +213,24 @@ class GpsPointService(database: Database) {
                         it[Tracks.category]
                     )
                 }.singleOrNull() ?: return@dbQuery null
-            val points = GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.trackId eq trackId }
-                .orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
-                    GpsPoint(
-                        it[GpsPoints.id],
-                        it[GpsPoints.timestamp],
-                        it[GpsPositions.lat],
-                        it[GpsPositions.lon],
-                        it[GpsPoints.hdop],
-                        it[GpsPoints.altitude],
-                        it[GpsPoints.speed],
-                        it[GpsPoints.bearing],
-                        it[GpsPoints.eta],
-                        it[GpsPoints.etfa],
-                        it[GpsPoints.eda],
-                        it[GpsPoints.edfa]
-                    )
-                }
+            val points =
+                GpsPoints.selectAll().where { GpsPoints.trackId eq trackId }.orderBy(GpsPoints.timestamp, SortOrder.ASC)
+                    .map {
+                        GpsPoint(
+                            it[GpsPoints.id],
+                            it[GpsPoints.timestamp],
+                            it[GpsPoints.location].y,
+                            it[GpsPoints.location].x,
+                            it[GpsPoints.hdop],
+                            it[GpsPoints.location].z,
+                            it[GpsPoints.speed],
+                            it[GpsPoints.bearing],
+                            it[GpsPoints.eta],
+                            it[GpsPoints.etfa],
+                            it[GpsPoints.eda],
+                            it[GpsPoints.edfa]
+                        )
+                    }
             Track(trackUuid, startTimestamp, endTimestamp, points, category)
         }
     }
@@ -264,23 +247,24 @@ class GpsPointService(database: Database) {
                         it[Tracks.category]
                     )
                 }.singleOrNull() ?: return@dbQuery null
-            val points = GpsPoints.leftJoin(GpsPositions).selectAll().where { GpsPoints.trackId eq trackId }
-                .orderBy(GpsPoints.timestamp, SortOrder.ASC).map {
-                    GpsPoint(
-                        it[GpsPoints.id],
-                        it[GpsPoints.timestamp],
-                        it[GpsPositions.lat],
-                        it[GpsPositions.lon],
-                        it[GpsPoints.hdop],
-                        it[GpsPoints.altitude],
-                        it[GpsPoints.speed],
-                        it[GpsPoints.bearing],
-                        it[GpsPoints.eta],
-                        it[GpsPoints.etfa],
-                        it[GpsPoints.eda],
-                        it[GpsPoints.edfa]
-                    )
-                }
+            val points =
+                GpsPoints.selectAll().where { GpsPoints.trackId eq trackId }.orderBy(GpsPoints.timestamp, SortOrder.ASC)
+                    .map {
+                        GpsPoint(
+                            it[GpsPoints.id],
+                            it[GpsPoints.timestamp],
+                            it[GpsPoints.location].y,
+                            it[GpsPoints.location].x,
+                            it[GpsPoints.hdop],
+                            it[GpsPoints.location].z,
+                            it[GpsPoints.speed],
+                            it[GpsPoints.bearing],
+                            it[GpsPoints.eta],
+                            it[GpsPoints.etfa],
+                            it[GpsPoints.eda],
+                            it[GpsPoints.edfa]
+                        )
+                    }
             Track(trackUuid, startTimestamp, endTimestamp, points, category)
         }
     }
