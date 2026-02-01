@@ -68,8 +68,8 @@ class PointGeographyColumnTypeTest {
         }
         transaction {
             addLogger(StdOutSqlLogger)
-            val test = PositionsTable.select(PositionsTable.location.toGeometry().ST_MakeLine().ST_Force2D().ST_AsGeoJSON()).first().let {
-                it[PositionsTable.location.toGeometry().ST_MakeLine().ST_Force2D().ST_AsGeoJSON()]
+            val test = PositionsTable.select(PositionsTable.location.toGeometry().ST_MakeLine().toGeometry().ST_Force2D().ST_AsGeoJSON()).first().let {
+                it[PositionsTable.location.toGeometry().ST_MakeLine().toGeometry().ST_Force2D().ST_AsGeoJSON()]
             }
 
             val result = PositionsTable.select(PositionsTable.location.toGeometry().ST_MakeLine().ST_AsGeoJSON()).map {

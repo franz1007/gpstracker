@@ -85,15 +85,6 @@ private class LineStringGeometryColumnType(val srid: Int = 4326) : ColumnType<Li
     }
 }
 
-class ToGeometryFunction(
-    val expression: Expression<Point>
-) : Function<Point>(PointGeometryColumnType()) {
-    override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
-        append(expression)
-        append("::geometry")
-    }
-}
-
 class ST_AsGeoJSONFunction<T : Geometry>(
     val expression: Expression<T>,
 ) : Function<String>(TextColumnType()) {
@@ -114,6 +105,26 @@ class ST_MakeLineFunction<T : Point>(
     }
 }
 
+class ToGeometryFunction<T : Geometry>(
+    /** Returns the expression from which the minimum value is obtained. */
+    val expr: Expression<T>, columnType: IColumnType<T>
+) : Function<T>(columnType) {
+    override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
+        append(expr)
+        append("::geometry")
+    }
+}
+
+class ToGeographyFunction<T : Geometry>(
+    /** Returns the expression from which the minimum value is obtained. */
+    val expr: Expression<T>, columnType: IColumnType<T>
+) : Function<T>(columnType) {
+    override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
+        append(expr)
+        append("::geography")
+    }
+}
+
 class ST_Force2DFunction<T : Geometry>(
     /** Returns the expression from which the minimum value is obtained. */
     val expr: Expression<T>, columnType: IColumnType<T>
@@ -128,7 +139,8 @@ class ST_Force2DFunction<T : Geometry>(
 
 fun <T : Geometry> Expression<T>.ST_AsGeoJSON() = ST_AsGeoJSONFunction(this)
 fun ExpressionWithColumnType<Point>.ST_MakeLine() = ST_MakeLineFunction(this)
-fun ExpressionWithColumnType<Point>.toGeometry() = ToGeometryFunction(this)
+fun <T : Geometry> ExpressionWithColumnType<T>.toGeometry() = ToGeometryFunction(this, columnType)
+fun <T : Geometry> ExpressionWithColumnType<T>.toGeography() = ToGeographyFunction(this, columnType)
 fun <T : Geometry> ExpressionWithColumnType<T>.ST_Force2D() = ST_Force2DFunction(this, columnType = columnType)
 
 //SELECT ST_ASGEOJSON(ST_MakeLine(location::geometry ORDER BY timestamp))
