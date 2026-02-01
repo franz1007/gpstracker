@@ -1,4 +1,4 @@
-package eu.franz1007.postgis
+package eu.franz1007.exposed.postgis
 
 import net.postgis.jdbc.geometry.Point
 

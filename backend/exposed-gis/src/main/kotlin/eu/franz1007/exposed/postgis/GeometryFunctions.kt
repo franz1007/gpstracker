@@ -1,4 +1,4 @@
-package eu.franz1007.exposed.gis.postgis
+package eu.franz1007.exposed.postgis
 
 import net.postgis.jdbc.geometry.Geometry
 import net.postgis.jdbc.geometry.LineString

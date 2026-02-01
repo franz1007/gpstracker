@@ -1,6 +1,6 @@
 package eu.franz1007.gpstracker.database
 
-import eu.franz1007.exposed.gis.postgis.pointGeography
+import eu.franz1007.exposed.postgis.pointGeography
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers

@@ -1,6 +1,5 @@
-package eu.franz1007.postgis
+package eu.franz1007.exposed.postgis
 
-import eu.franz1007.exposed.gis.postgis.*
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
