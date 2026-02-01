@@ -1,6 +1,6 @@
 package eu.franz1007.gpstracker.database
 
-import eu.franz1007.exposed.gis.core.models.Point
+import eu.franz1007.exposed.gis.core.models.PointGeography
 import eu.franz1007.exposed.gis.postgis.pointGeography
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
@@ -60,7 +60,7 @@ class GpsPointService(database: Database) {
 
             }
 
-            val newPointId = GpsPoints.insert {
+            val newPointGeographyId = GpsPoints.insert {
                 it[timestamp] = point.timestamp
                 it[hdop] = point.hdop
                 it[speed] = point.speed
@@ -70,12 +70,12 @@ class GpsPointService(database: Database) {
                 it[eda] = point.eda
                 it[edfa] = point.edfa
                 it[trackId] = currentTrackId
-                it[location] = Point(point.lat, point.lon, point.altitude)
+                it[location] = PointGeography(point.lat, point.lon, point.altitude)
             }[GpsPoints.id]
             Tracks.update({ Tracks.id eq currentTrackId }) {
                 it[endTimestamp] = point.timestamp
             }
-            return@dbQuery newPointId
+            return@dbQuery newPointGeographyId
         }
     }
 
@@ -110,7 +110,7 @@ class GpsPointService(database: Database) {
                     it[eda] = point.eda
                     it[edfa] = point.edfa
                     it[trackId] = id
-                    it[location] = Point(point.lon, point.lat, point.altitude)
+                    it[location] = PointGeography(point.lon, point.lat, point.altitude)
                 }[GpsPoints.id]
             }
             return@dbQuery id

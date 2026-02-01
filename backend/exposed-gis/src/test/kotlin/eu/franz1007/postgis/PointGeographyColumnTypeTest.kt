@@ -1,21 +1,24 @@
 package eu.franz1007.postgis
 
-import eu.franz1007.exposed.gis.core.models.Point
+import eu.franz1007.exposed.gis.core.models.PointGeography
+import eu.franz1007.exposed.gis.core.models.PointGeometry
+import eu.franz1007.exposed.gis.postgis.ST_AsGeoJSON
+import eu.franz1007.exposed.gis.postgis.ST_MakeLine
 import eu.franz1007.exposed.gis.postgis.pointGeography
 import eu.franz1007.exposed.gis.postgis.pointGeometry
+import eu.franz1007.exposed.gis.postgis.toGeometry
+import net.postgis.jdbc.geometry.Geometry
+import org.jetbrains.exposed.v1.core.Column
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PointColumnTypeTest {
+class PointGeographyColumnTypeTest {
     @Test
     fun testCreateSchema() {
         val image = DockerImageName.parse("postgis/postgis:18-3.6").asCompatibleSubstituteFor("postgres")
@@ -47,13 +50,18 @@ class PointColumnTypeTest {
             addLogger(StdOutSqlLogger)
             SchemaUtils.create(PositionsTable)
         }
-        val positionGreenwich = Point(51.477928, -0.001545, 5.0, 4326)
-        val otherPosition = Point(-0.001545, 51.477928, 5.0, 4326)
+        val positionGreenwich = PointGeography(51.477928, -0.001545, 5.0, 4326)
+        val otherPosition = PointGeometry(-0.001545, 51.477928, 5.0, 4326)
         transaction(db) {
             addLogger(StdOutSqlLogger)
             println("inserting")
             PositionsTable.insert {
                 it[PositionsTable.id] = 1
+                it[PositionsTable.location] = positionGreenwich
+                it[PositionsTable.geometryLocation] = otherPosition
+            }
+            PositionsTable.insert {
+                it[PositionsTable.id] = 2
                 it[PositionsTable.location] = positionGreenwich
                 it[PositionsTable.geometryLocation] = otherPosition
             }
@@ -63,7 +71,14 @@ class PointColumnTypeTest {
         val positionsDb = transaction(db) {
             PositionsTable.selectAll().map { Pair(it[PositionsTable.location], it[PositionsTable.geometryLocation]) }
         }
-        assertEquals(1, positionsDb.size)
+        transaction {
+            addLogger(StdOutSqlLogger)
+            val result = PositionsTable.select(PositionsTable.location.toGeometry().ST_MakeLine().ST_AsGeoJSON()).map{
+                it[PositionsTable.location.toGeometry().ST_MakeLine().ST_AsGeoJSON()]
+            }
+            println(result)
+        }
+        assertEquals(2, positionsDb.size)
         positionsDb.first().let { (geography, geometry) ->
             assertEquals(geography, positionGreenwich)
             assertEquals(geometry, otherPosition)
