@@ -47,7 +47,6 @@ dependencies {
     implementation(libs.ktor.server.sse)
     implementation(libs.spatialk.geojson)
     implementation(libs.hikari)
-    implementation(libs.postgis)
 
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.testcontainers.postgres)
@@ -70,3 +69,8 @@ tasks.register<JavaExec>("generateMigrationScript") {
 
 // Necessary for flyway to work
 tasks.shadowJar { mergeServiceFiles() }
+
+tasks.test{
+    systemProperties["junit.jupiter.execution.parallel.enabled"] = true
+    systemProperties["junit.jupiter.execution.parallel.mode.default"] = "concurrent"
+}

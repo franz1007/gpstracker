@@ -4,6 +4,7 @@ import eu.franz1007.exposed.gis.postgis.ST_AsGeoJSON
 import eu.franz1007.exposed.gis.postgis.ST_Force2D
 import eu.franz1007.exposed.gis.postgis.pointGeography
 import eu.franz1007.exposed.gis.postgis.pointGeometry
+import eu.franz1007.exposed.gis.postgis.toGeography
 import eu.franz1007.exposed.gis.postgis.toGeometry
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
@@ -142,5 +143,48 @@ class GeometryFunctionsTest {
                 it[PositionsTable.location.toGeometry().ST_Force2D()]
             }
         }
+    }
+
+    @Test
+    fun `test toGeograpyh`() {
+        //ST_Force2D fails for Geometry so this is used for testing
+        val image = DockerImageName.parse("postgis/postgis:18-3.6").asCompatibleSubstituteFor("postgres")
+        val postgres = PostgreSQLContainer(image)
+        postgres.start()
+        val db = Database.connect(url = postgres.jdbcUrl, user = postgres.username, password = postgres.password)
+        transaction(db) {
+            addLogger(StdOutSqlLogger)
+            SchemaUtils.create(PositionsTableGeometry)
+        }
+        val positions = listOf(
+            Point(51.477928, -0.001545, 5.0), Point(-0.001545, 51.477928, 5.0)
+        )
+        transaction(db) {
+            addLogger(StdOutSqlLogger)
+            positions.forEach { position ->
+                PositionsTableGeometry.insert {
+                    it[PositionsTableGeometry.location] = position
+                }
+            }
+        }
+        //This should not fail:
+        val result = transaction(db) {
+            PositionsTableGeometry.select(
+                PositionsTableGeometry.location.ST_Force2D()
+            ).map {
+                it[PositionsTableGeometry.location.ST_Force2D()]
+            }
+        }
+        assertContentEquals(positions.map { it.asTwoDimensionPoint() }, result.map { it.withoutSRID() })
+        assertFailsWith(ExposedSQLException::class) {
+            transaction(db) {
+                PositionsTableGeometry.select(
+                    PositionsTableGeometry.location.toGeography().ST_Force2D()
+                ).map {
+                    it[PositionsTableGeometry.location.toGeography().ST_Force2D()]
+                }
+            }
+        }
+
     }
 }
