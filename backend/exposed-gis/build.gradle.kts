@@ -13,7 +13,7 @@ dependencies {
     implementation(libs.exposed.jdbc)
     implementation(libs.postgis)
 
-
+    testImplementation(libs.logback.classic)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.testcontainers.postgres)
 }
