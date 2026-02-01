@@ -28,7 +28,7 @@ class PointGeographyColumnTypeTest {
         }
     }
 
-    object PositionsTable : Table() {
+    private object PositionsTable : Table() {
         val id = integer("id").autoIncrement()
         val location = pointGeography("location", srid = 4326)
         val geometryLocation = pointGeometry("geometryLocation", srid = 4326)
@@ -90,10 +90,3 @@ class PointGeographyColumnTypeTest {
     }
 
 }
-
-fun Point.withoutSRID(): Point = when (dimension) {
-    2 -> Point(x, y)
-    3 -> Point(x, y, z)
-    else -> throw IllegalArgumentException("only 2 and 3 dimensions implemented")
-}
-
