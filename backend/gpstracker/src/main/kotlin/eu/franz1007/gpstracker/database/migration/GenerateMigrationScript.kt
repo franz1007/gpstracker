@@ -1,7 +1,6 @@
 package eu.franz1007.gpstracker.database.migration
 
 import eu.franz1007.gpstracker.database.GpsPointService
-import io.ktor.util.cio.readChannel
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -48,8 +47,7 @@ fun generateMigrationScript() {
 
 fun getNextMigrationName(path: Path): String {
     val version = path.useDirectoryEntries("V*__*.sql") { sequence ->
-        sequence.map { it.name.removePrefix("V").substringBefore("__").substringBefore(".").toInt() }.sorted()
-            .lastOrNull()?.let {
+        sequence.maxOfOrNull { it.name.removePrefix("V").substringBefore("__").substringBefore(".").toInt() }?.let {
                 it + 1
             } ?: 1
     }

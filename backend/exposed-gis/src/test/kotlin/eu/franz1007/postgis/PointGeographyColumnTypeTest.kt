@@ -2,10 +2,8 @@ package eu.franz1007.postgis
 
 import eu.franz1007.exposed.gis.postgis.*
 import net.postgis.jdbc.geometry.Point
-import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.function
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.testcontainers.postgresql.PostgreSQLContainer

@@ -70,11 +70,11 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     call.respond(gpsPointService.readAllTracksWithoutPoints())
                 }
                 get("/metadata/{trackId}") {
-                    val trackId = call.parameters.getOrFail("trackid").let {
+                    val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
                         runCatching {
-                            Uuid.parse(it)
-                        }.getOrElse {
-                            call.respond(HttpStatusCode.BadRequest, it.message.orEmpty())
+                            Uuid.parse(uuidString)
+                        }.getOrElse { throwable ->
+                            call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
                             return@get
                         }
                     }
@@ -120,11 +120,11 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     }
                 }
                 post("/updateCategory") {
-                    val trackId = call.parameters.getOrFail("trackid").let {
+                    val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
                         runCatching {
-                            Uuid.parse(it)
-                        }.getOrElse {
-                            call.respond(HttpStatusCode.BadRequest, it.message.orEmpty())
+                            Uuid.parse(uuidString)
+                        }.getOrElse { throwable ->
+                            call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
                             return@post
                         }
                     }
@@ -248,7 +248,7 @@ suspend fun initPoints(
         if ((repetition + 2) % 2 == 0) lat += 0.0001
         lon += 0.0001
         val timestamp = Clock.System.now().minus(timeAgo)
-        val id = gpsPointService.addPoint(startingPoint.copy(timestamp, lat = lat, lon = lon))
+        val id = gpsPointService.addPoint(startingPoint.copy(timestamp = timestamp, lat = lat, lon = lon))
         val point = gpsPointService.read(id)
         connections.forEach {
             println("sending")

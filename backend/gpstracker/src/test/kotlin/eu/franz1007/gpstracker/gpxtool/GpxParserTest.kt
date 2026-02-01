@@ -1,7 +1,5 @@
 package eu.franz1007.gpstracker.gpxtool
 
-import java.io.File
-import java.nio.file.Files
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile

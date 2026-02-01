@@ -1,11 +1,6 @@
 package eu.franz1007.postgis
 
-import eu.franz1007.exposed.gis.postgis.ST_AsGeoJSON
-import eu.franz1007.exposed.gis.postgis.ST_Force2D
-import eu.franz1007.exposed.gis.postgis.pointGeography
-import eu.franz1007.exposed.gis.postgis.pointGeometry
-import eu.franz1007.exposed.gis.postgis.toGeography
-import eu.franz1007.exposed.gis.postgis.toGeometry
+import eu.franz1007.exposed.gis.postgis.*
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.StdOutSqlLogger
 import org.jetbrains.exposed.v1.core.Table
@@ -15,12 +10,10 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.postgresql.util.PSQLException
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
-import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 
 class GeometryFunctionsTest {

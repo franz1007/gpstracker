@@ -6,11 +6,11 @@ import eu.franz1007.gpstracker.database.GpsPointService
 import io.ktor.server.application.*
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
+@Suppress("unused")
 fun Application.module() {
     configureCors()
     configureSecurity()

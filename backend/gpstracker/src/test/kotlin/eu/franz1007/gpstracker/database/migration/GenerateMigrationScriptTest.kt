@@ -15,8 +15,8 @@ class GenerateMigrationScriptTest {
         val tempDir = Path("/tmp/test${Uuid.random()}").createDirectories()
         assertEquals("V1__Migration", getNextMigrationName(tempDir))
         tempDir.let{
-            it.resolve("V1__Migration.sql").createFile()
             it.resolve("V1.4__Migration.sql").createFile()
+            it.resolve("V1__Migration.sql").createFile()
             it.resolve("V2__Somename.sql").createFile()
         }
         assertEquals("V3__Migration", getNextMigrationName(tempDir))
