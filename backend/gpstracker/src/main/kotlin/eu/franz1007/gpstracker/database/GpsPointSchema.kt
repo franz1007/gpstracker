@@ -17,7 +17,9 @@ import kotlinx.serialization.json.JsonUnquotedLiteral
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.putJsonObject
 import net.postgis.jdbc.geometry.Point
+import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.SubQueryOp
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.eq
@@ -286,18 +288,19 @@ class GpsPointService(database: Database) {
 
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun readTrackGeoJson(uuid: Uuid) = dbQuery {
-        Tracks.innerJoin(GpsPoints).select(
+        val line = GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).alias("line")
+        val subquery = GpsPoints.select(
+            GpsPoints.trackId, line
+        ).groupBy(GpsPoints.trackId).alias("subquery")
+        Tracks.join(subquery, JoinType.LEFT, subquery[GpsPoints.trackId], Tracks.id).select(
             Tracks.id,
             Tracks.category,
             Tracks.startTimestamp,
             Tracks.endTimestamp,
-            GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_AsGeoJSON(),
-            GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_Force2D().toGeography()
-                .ST_Length()
-        ).where { Tracks.uuid eq uuid }.groupBy(Tracks.id).singleOrNull()?.let {
-            val distanceMeters =
-                it[GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_Force2D().toGeography()
-                    .ST_Length()]
+            subquery[line].ST_AsGeoJSON(),
+            subquery[line].ST_Force2D().toGeography().ST_Length()
+        ).where { Tracks.uuid eq uuid }.singleOrNull()?.let {
+            val distanceMeters = it[subquery[line].ST_Force2D().toGeography().ST_Length()]
             val startTimestamp = it[Tracks.startTimestamp]
             val endTimestamp = it[Tracks.endTimestamp]
             val averageSpeedKph =
@@ -307,7 +310,7 @@ class GpsPointService(database: Database) {
                 put("type", JsonPrimitive("Feature"))
                 put(
                     "geometry", JsonUnquotedLiteral(
-                        it[GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_AsGeoJSON()]
+                        it[subquery[line].ST_AsGeoJSON()]
                     )
                 )
                 put("uuid", JsonPrimitive(uuid.toString()))
