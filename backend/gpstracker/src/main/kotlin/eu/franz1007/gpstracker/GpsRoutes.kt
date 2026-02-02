@@ -21,12 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import java.util.*
-import kotlin.time.Clock
-import kotlin.time.Duration
-import kotlin.time.DurationUnit
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
-import kotlin.time.toDuration
+import kotlin.time.*
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -79,12 +74,12 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         }
                     }
                     println("test")
-                    val track = gpsPointService.readTrack(trackId)
-                    if (track == null) {
+                    val trackMetadata = gpsPointService.readTrackMetadata(trackId)
+                    if (trackMetadata == null) {
                         call.respond(HttpStatusCode.NotFound)
                     } else {
                         call.respond(
-                            track.calculateMetadata().onlyMetadata()
+                            trackMetadata
                         )
                     }
                 }
@@ -229,37 +224,5 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                                 }
 
                                  */
-    }
-}
-
-suspend fun initPoints(
-    startingPoint: GpsPointNoId,
-    gpsPointService: GpsPointService,
-    connections: MutableSet<DefaultWebSocketServerSession>,
-    sseConnections: MutableSet<ServerSSESession>,
-    delay: Duration,
-    timeAgo: Duration
-) {
-    var lat = startingPoint.lat
-    var lon = startingPoint.lon
-    repeat(1000) { repetition ->
-        if ((repetition + 2) % 2 == 0) lat += 0.0001
-        lon += 0.0001
-        val timestamp = Clock.System.now().minus(timeAgo)
-        val id = gpsPointService.addPoint(startingPoint.copy(timestamp = timestamp, lat = lat, lon = lon))
-        val point = gpsPointService.read(id)
-        connections.forEach {
-            println("sending")
-            it.sendSerialized(point)
-        }
-        sseConnections.forEach {
-            println("sendingSSE")
-            try {
-                it.send(ServerSentEvent(Json.encodeToString(point), id = point?.id.toString()))
-            } catch (e: IOException) {
-                sseConnections.remove(it)
-            }
-        }
-        delay(delay)
     }
 }

@@ -2,7 +2,6 @@ package eu.franz1007.gpstracker.database
 
 import eu.franz1007.exposed.postgis.*
 import eu.franz1007.gpstracker.model.*
-import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.*
@@ -117,27 +116,6 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun read(id: Long): GpsPoint? {
-        return dbQuery {
-            GpsPoints.selectAll().where { GpsPoints.id eq id }.map {
-                GpsPoint(
-                    it[GpsPoints.id],
-                    it[GpsPoints.timestamp],
-                    it[GpsPoints.location].y,
-                    it[GpsPoints.location].x,
-                    it[GpsPoints.hdop],
-                    it[GpsPoints.location].z,
-                    it[GpsPoints.speed],
-                    it[GpsPoints.bearing],
-                    it[GpsPoints.eta],
-                    it[GpsPoints.etfa],
-                    it[GpsPoints.eda],
-                    it[GpsPoints.edfa]
-                )
-            }.singleOrNull()
-        }
-    }
-
     suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
         return dbQuery {
             Tracks.selectAll().map {
@@ -158,37 +136,38 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readTrack(uuid: Uuid): Track? {
-        return dbQuery {
-            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
-                .where { Tracks.uuid eq uuid }.map {
-                    Quintuple(
-                        it[Tracks.id],
-                        it[Tracks.uuid],
-                        it[Tracks.startTimestamp],
-                        it[Tracks.endTimestamp],
-                        it[Tracks.category]
-                    )
-                }.singleOrNull() ?: return@dbQuery null
-            val points =
-                GpsPoints.selectAll().where { GpsPoints.trackId eq trackId }.orderBy(GpsPoints.timestamp, SortOrder.ASC)
-                    .map {
-                        GpsPoint(
-                            it[GpsPoints.id],
-                            it[GpsPoints.timestamp],
-                            it[GpsPoints.location].y,
-                            it[GpsPoints.location].x,
-                            it[GpsPoints.hdop],
-                            it[GpsPoints.location].z,
-                            it[GpsPoints.speed],
-                            it[GpsPoints.bearing],
-                            it[GpsPoints.eta],
-                            it[GpsPoints.etfa],
-                            it[GpsPoints.eda],
-                            it[GpsPoints.edfa]
-                        )
-                    }
-            Track(trackUuid, startTimestamp, endTimestamp, points, category)
+    @OptIn(ExperimentalSerializationApi::class)
+    suspend fun readTrackMetadata(
+        uuid: Uuid
+    ) = dbQuery {
+        val line = GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).alias("line")
+        val subquery = GpsPoints.select(
+            GpsPoints.trackId, line
+        ).groupBy(GpsPoints.trackId).alias("subquery")
+        Tracks.join(subquery, JoinType.LEFT, subquery[GpsPoints.trackId], Tracks.id).select(
+            Tracks.id,
+            Tracks.uuid,
+            Tracks.category,
+            Tracks.startTimestamp,
+            Tracks.endTimestamp,
+            subquery[line].ST_Force2D().toGeography().ST_Length()
+        ).where { Tracks.uuid eq uuid }.singleOrNull()?.let {
+            val distanceMeters = it[subquery[line].ST_Force2D().toGeography().ST_Length()]
+            val startTimestamp = it[Tracks.startTimestamp]
+            val endTimestamp = it[Tracks.endTimestamp]
+            val trackCategory = it[Tracks.category]
+            val averageSpeedKph =
+                ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { speed -> speed.isFinite() }
+                    ?: 0.0
+            TrackOnlyMetadata(
+                uuid = uuid,
+                startTimestamp = startTimestamp,
+                endTimestamp = endTimestamp,
+                distanceMeters = distanceMeters.toInt(),
+                averageSpeedKph = averageSpeedKph,
+                category = trackCategory
+            )
+
         }
     }
 

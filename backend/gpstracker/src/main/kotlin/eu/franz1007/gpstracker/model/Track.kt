@@ -3,7 +3,6 @@
 package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.Gpx
-import eu.franz1007.gpstracker.util.SloppyMath
 import kotlinx.serialization.Serializable
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -12,49 +11,6 @@ import kotlin.uuid.Uuid
 
 enum class TRACK_CATEGORY {
     UNCATEGORIZED, CYCLING, RUNNING, HIKING
-}
-
-@Serializable
-@OptIn(ExperimentalUuidApi::class)
-data class Track(
-    val uuid: Uuid,
-    val startTimestamp: Instant,
-    val endTimestamp: Instant,
-    val points: List<GpsPoint>,
-    val category: TRACK_CATEGORY
-) {
-    fun calculateMetadata(): TrackWIthMetadata {
-        val (distanceMeters, _) = points.fold(Pair<Double, GpsPoint?>(0.0, null)) { acc, next ->
-            val last = acc.second
-            if (last != null) {
-                val distance = SloppyMath.haversinMeters(last.lat, last.lon, next.lat, next.lon)
-                acc.copy(first = acc.first + distance, second = next)
-            } else {
-                acc.copy(second = next)
-            }
-        }
-        val averageSpeedKph =
-            ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { it.isFinite() } ?: 0.0
-        return TrackWIthMetadata(
-            uuid, startTimestamp, endTimestamp, points, distanceMeters.toInt(), averageSpeedKph, category
-        )
-    }
-}
-
-@Serializable
-@OptIn(ExperimentalUuidApi::class)
-data class TrackWIthMetadata(
-    val uuid: Uuid,
-    val startTimestamp: Instant,
-    val endTimestamp: Instant,
-    val points: List<GpsPoint>,
-    val distanceMeters: Int,
-    val averageSpeedKph: Double,
-    val category: TRACK_CATEGORY
-) {
-    fun onlyMetadata(): TrackOnlyMetadata {
-        return TrackOnlyMetadata(uuid, startTimestamp, endTimestamp, distanceMeters, averageSpeedKph, category)
-    }
 }
 
 @Serializable
