@@ -19,7 +19,10 @@ import kotlinx.serialization.json.putJsonObject
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.sum
+import org.jetbrains.exposed.v1.datetime.time
 import org.jetbrains.exposed.v1.datetime.timestamp
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
@@ -282,33 +285,41 @@ class GpsPointService(database: Database) {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    suspend fun readTrackGeoJson(uuid: Uuid): String? = dbQuery {
-        Tracks.leftJoin(GpsPoints).select(
-            Tracks.category,
-            Tracks.startTimestamp,
-            Tracks.endTimestamp,
-            GpsPoints.location.toGeometry().ST_MakeLine().ST_AsGeoJSON(),
-            GpsPoints.location.toGeometry().ST_MakeLine().ST_Force2D().toGeography().ST_Length()
-        ).where { Tracks.uuid eq uuid }.groupBy(Tracks.id).singleOrNull()?.let {
-            val distanceMeters =
-                it[GpsPoints.location.toGeometry().ST_MakeLine().ST_Force2D().toGeography().ST_Length()]
-            val startTimestamp = it[Tracks.startTimestamp]
-            val endTimestamp = it[Tracks.endTimestamp]
-            val averageSpeedKph =
-                ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { speed -> speed.isFinite() }
-                    ?: 0.0
-            Json.encodeToString(buildJsonObject {
-                put("type", JsonPrimitive("Feature"))
-                put("geometry", JsonUnquotedLiteral(it[GpsPoints.location.toGeometry().ST_MakeLine().ST_AsGeoJSON()]))
-                put("uuid", JsonPrimitive(uuid.toString()))
-                putJsonObject("properties") {
-                    put("startTimestamp", JsonPrimitive(startTimestamp.toString()))
-                    put("endTimestamp", JsonPrimitive(endTimestamp.toString()))
-                    put("distanceMeters", JsonPrimitive(distanceMeters.toInt().toString()))
-                    put("category", JsonPrimitive(it[Tracks.category].toString()))
-                    put("averageSpeedKph", JsonPrimitive(averageSpeedKph.toString()))
-                }
-            })
+    suspend fun readTrackGeoJson(uuid: Uuid) = dbQuery {
+        Tracks.select(
+            Tracks.id, Tracks.category, Tracks.startTimestamp, Tracks.endTimestamp
+        ).where { Tracks.uuid eq uuid }.singleOrNull()?.let { trackRow ->
+            GpsPoints.select(
+                GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_AsGeoJSON(),
+                GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_Force2D().toGeography()
+                    .ST_Length()
+            ).where { GpsPoints.trackId eq trackRow[Tracks.id] }.single().let {
+                val distanceMeters =
+                    it[GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).ST_Force2D()
+                        .toGeography().ST_Length()]
+                val startTimestamp = trackRow[Tracks.startTimestamp]
+                val endTimestamp = trackRow[Tracks.endTimestamp]
+                val averageSpeedKph =
+                    ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { speed -> speed.isFinite() }
+                        ?: 0.0
+                Json.encodeToString(buildJsonObject {
+                    put("type", JsonPrimitive("Feature"))
+                    put(
+                        "geometry", JsonUnquotedLiteral(
+                            it[GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp)
+                                .ST_AsGeoJSON()]
+                        )
+                    )
+                    put("uuid", JsonPrimitive(uuid.toString()))
+                    putJsonObject("properties") {
+                        put("startTimestamp", JsonPrimitive(startTimestamp.toString()))
+                        put("endTimestamp", JsonPrimitive(endTimestamp.toString()))
+                        put("distanceMeters", JsonPrimitive(distanceMeters.toInt().toString()))
+                        put("category", JsonPrimitive(trackRow[Tracks.category].toString()))
+                        put("averageSpeedKph", JsonPrimitive(averageSpeedKph.toString()))
+                    }
+                })
+            }
         }
     }
 

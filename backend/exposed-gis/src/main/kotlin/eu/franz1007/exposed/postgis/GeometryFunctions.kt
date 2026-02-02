@@ -9,8 +9,12 @@ import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
 import org.jetbrains.exposed.v1.core.Function
 import org.jetbrains.exposed.v1.core.IColumnType
 import org.jetbrains.exposed.v1.core.QueryBuilder
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.TextColumnType
+import org.jetbrains.exposed.v1.core.WindowFunction
+import org.jetbrains.exposed.v1.core.WindowFunctionDefinition
 import org.jetbrains.exposed.v1.core.append
+import org.jetbrains.exposed.v1.core.vendors.currentDialect
 
 @Suppress("ClassName")
 class ST_AsGeoJSONFunction<T : Geometry>(
@@ -31,16 +35,41 @@ class ST_MakeLineFunction<T : Point>(
     override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
         append("ST_MakeLine", '(')
         append(expression)
+        appendOrderByClause()
         append(')')
     }
+
+    private fun QueryBuilder.appendOrderByClause() {
+        if (orderByExpressions.isNotEmpty()) {
+            +" ORDER BY "
+            orderByExpressions.appendTo { (expression, sortOrder) ->
+                currentDialect.dataTypeProvider.precessOrderByClause(this, expression, sortOrder)
+            }
+        }
+    }
+
+    private val orderByExpressions: List<Pair<Expression<*>, SortOrder>> = mutableListOf()
+
+    fun orderBy(column: Expression<*>, order: SortOrder = SortOrder.ASC): ST_MakeLineFunction<T> =
+        orderBy(column to order)
+
+    fun orderBy(vararg order: Pair<Expression<*>, SortOrder>): ST_MakeLineFunction<T> = apply {
+        (orderByExpressions as MutableList).addAll(order)
+    }
+
 }
 
 class ToGeometryFunction<T : Geometry>(
     val expr: Expression<T>, columnType: IColumnType<T>
-) : Function<T>(columnType) {
+) : Function<T>(columnType), WindowFunction<T> {
+
     override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
         append(expr)
         append("::geometry")
+    }
+
+    override fun over(): WindowFunctionDefinition<T> {
+        return WindowFunctionDefinition(columnType, this)
     }
 }
 
