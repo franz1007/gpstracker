@@ -1,30 +1,13 @@
 package eu.franz1007.gpstracker.database
 
-import eu.franz1007.exposed.postgis.ST_AsGeoJSON
-import eu.franz1007.exposed.postgis.ST_Force2D
-import eu.franz1007.exposed.postgis.ST_Length
-import eu.franz1007.exposed.postgis.ST_MakeLine
-import eu.franz1007.exposed.postgis.pointGeography
-import eu.franz1007.exposed.postgis.toGeography
-import eu.franz1007.exposed.postgis.toGeometry
+import eu.franz1007.exposed.postgis.*
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.JsonUnquotedLiteral
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.json.*
 import net.postgis.jdbc.geometry.Point
-import org.jetbrains.exposed.v1.core.JoinType
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.SubQueryOp
-import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.alias
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.sum
-import org.jetbrains.exposed.v1.datetime.time
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.datetime.timestamp
 import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
@@ -155,48 +138,6 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun readAllPoints(): List<GpsPoint> {
-        return dbQuery {
-            GpsPoints.selectAll().map {
-                GpsPoint(
-                    it[GpsPoints.id],
-                    it[GpsPoints.timestamp],
-                    it[GpsPoints.location].y,
-                    it[GpsPoints.location].x,
-                    it[GpsPoints.hdop],
-                    it[GpsPoints.location].z,
-                    it[GpsPoints.speed],
-                    it[GpsPoints.bearing],
-                    it[GpsPoints.eta],
-                    it[GpsPoints.etfa],
-                    it[GpsPoints.eda],
-                    it[GpsPoints.edfa]
-                )
-            }.toList()
-        }
-    }
-
-    suspend fun readLatestPoints(limit: Int): List<GpsPoint> {
-        return dbQuery {
-            GpsPoints.selectAll().orderBy(GpsPoints.timestamp, SortOrder.DESC).limit(limit).map {
-                GpsPoint(
-                    it[GpsPoints.id],
-                    it[GpsPoints.timestamp],
-                    it[GpsPoints.location].y,
-                    it[GpsPoints.location].x,
-                    it[GpsPoints.hdop],
-                    it[GpsPoints.location].z,
-                    it[GpsPoints.speed],
-                    it[GpsPoints.bearing],
-                    it[GpsPoints.eta],
-                    it[GpsPoints.etfa],
-                    it[GpsPoints.eda],
-                    it[GpsPoints.edfa]
-                )
-            }
-        }
-    }
-
     suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
         return dbQuery {
             Tracks.selectAll().map {
@@ -214,41 +155,6 @@ class GpsPointService(database: Database) {
                     it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
                 )
             }.singleOrNull()
-        }
-    }
-
-    //TODO query with join should be better
-    suspend fun readLatestTrack(): Track? {
-        return dbQuery {
-            val (trackId, trackUuid, startTimestamp, endTimestamp, category) = Tracks.selectAll()
-                .orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
-                    Quintuple(
-                        it[Tracks.id],
-                        it[Tracks.uuid],
-                        it[Tracks.startTimestamp],
-                        it[Tracks.endTimestamp],
-                        it[Tracks.category]
-                    )
-                }.singleOrNull() ?: return@dbQuery null
-            val points =
-                GpsPoints.selectAll().where { GpsPoints.trackId eq trackId }.orderBy(GpsPoints.timestamp, SortOrder.ASC)
-                    .map {
-                        GpsPoint(
-                            it[GpsPoints.id],
-                            it[GpsPoints.timestamp],
-                            it[GpsPoints.location].y,
-                            it[GpsPoints.location].x,
-                            it[GpsPoints.hdop],
-                            it[GpsPoints.location].z,
-                            it[GpsPoints.speed],
-                            it[GpsPoints.bearing],
-                            it[GpsPoints.eta],
-                            it[GpsPoints.etfa],
-                            it[GpsPoints.eda],
-                            it[GpsPoints.edfa]
-                        )
-                    }
-            Track(trackUuid, startTimestamp, endTimestamp, points, category)
         }
     }
 
@@ -287,19 +193,22 @@ class GpsPointService(database: Database) {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    suspend fun readTrackGeoJson(uuid: Uuid) = dbQuery {
+    private suspend fun readSingleTrackGeoJson(
+        vararg order: Pair<Expression<*>, SortOrder>, wherePredicate: () -> Op<Boolean> = { Op.TRUE }
+    ) = dbQuery {
         val line = GpsPoints.location.toGeometry().ST_MakeLine().orderBy(GpsPoints.timestamp).alias("line")
         val subquery = GpsPoints.select(
             GpsPoints.trackId, line
         ).groupBy(GpsPoints.trackId).alias("subquery")
         Tracks.join(subquery, JoinType.LEFT, subquery[GpsPoints.trackId], Tracks.id).select(
             Tracks.id,
+            Tracks.uuid,
             Tracks.category,
             Tracks.startTimestamp,
             Tracks.endTimestamp,
             subquery[line].ST_AsGeoJSON(),
             subquery[line].ST_Force2D().toGeography().ST_Length()
-        ).where { Tracks.uuid eq uuid }.singleOrNull()?.let {
+        ).where { wherePredicate() }.orderBy(order = order).limit(1).singleOrNull()?.let {
             val distanceMeters = it[subquery[line].ST_Force2D().toGeography().ST_Length()]
             val startTimestamp = it[Tracks.startTimestamp]
             val endTimestamp = it[Tracks.endTimestamp]
@@ -313,7 +222,7 @@ class GpsPointService(database: Database) {
                         it[subquery[line].ST_AsGeoJSON()]
                     )
                 )
-                put("uuid", JsonPrimitive(uuid.toString()))
+                put("uuid", JsonPrimitive(it[Tracks.uuid].toString()))
                 putJsonObject("properties") {
                     put("startTimestamp", JsonPrimitive(startTimestamp.toString()))
                     put("endTimestamp", JsonPrimitive(endTimestamp.toString()))
@@ -325,7 +234,12 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun readTrackGeoJson(uuid: Uuid) = readSingleTrackGeoJson { Tracks.uuid eq uuid }
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
+    suspend fun readLatestTrackGeoJson() = readSingleTrackGeoJson(Pair(Tracks.endTimestamp, SortOrder.DESC))
 }
+
+
+private suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
+
 

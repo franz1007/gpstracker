@@ -91,13 +91,12 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                 get("/geoJson/{trackId}") {
                     when (val trackId = call.parameters.getOrFail("trackId")) {
                         "latest" -> {
-                            val track = gpsPointService.readLatestTrack()
-                            if (track == null) {
+                            val geoJson = gpsPointService.readLatestTrackGeoJson()
+                            if (geoJson == null) {
                                 call.respond("")
                             } else {
                                 call.respondText(
-                                    track.calculateMetadata().toGeoJson().json(),
-                                    contentType = ContentType.Application.Json
+                                    geoJson, contentType = ContentType.Application.Json
                                 )
                             }
                         }
@@ -110,8 +109,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                             } else {
                                 call.respond(
                                     call.respondText(
-                                        geoJson,
-                                        contentType = ContentType.Application.Json
+                                        geoJson, contentType = ContentType.Application.Json
                                     )
                                 )
                             }

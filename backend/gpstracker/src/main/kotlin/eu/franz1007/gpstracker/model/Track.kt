@@ -4,9 +4,6 @@ package eu.franz1007.gpstracker.model
 
 import eu.franz1007.gpstracker.gpxtool.Gpx
 import eu.franz1007.gpstracker.util.SloppyMath
-import io.github.dellisd.spatialk.geojson.Feature
-import io.github.dellisd.spatialk.geojson.dsl.feature
-import io.github.dellisd.spatialk.geojson.dsl.lineString
 import kotlinx.serialization.Serializable
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -57,18 +54,6 @@ data class TrackWIthMetadata(
 ) {
     fun onlyMetadata(): TrackOnlyMetadata {
         return TrackOnlyMetadata(uuid, startTimestamp, endTimestamp, distanceMeters, averageSpeedKph, category)
-    }
-
-    fun toGeoJson(): Feature = feature(geometry = lineString {
-        points.forEach {
-            point(it.lon, it.lat, it.altitude)
-        }
-    }, id = "track$uuid") {
-        put("startTimestamp", startTimestamp.toString())
-        put("endTimestamp", endTimestamp.toString())
-        put("distanceMeters", distanceMeters.toString())
-        put("category", category.toString())
-        put("averageSpeedKph", averageSpeedKph.toString())
     }
 }
 
