@@ -104,13 +104,13 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
 
                         else -> {
                             call.caching = CachingOptions(CacheControl.MaxAge(maxAgeSeconds = 3600))
-                            val track = gpsPointService.readTrack(Uuid.parse(trackId))
-                            if (track == null) {
+                            val geoJson = gpsPointService.readTrackGeoJson(Uuid.parse(trackId))
+                            if (geoJson == null) {
                                 call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
                             } else {
                                 call.respond(
                                     call.respondText(
-                                        track.calculateMetadata().toGeoJson().json(),
+                                        geoJson,
                                         contentType = ContentType.Application.Json
                                     )
                                 )

@@ -1,9 +1,21 @@
 package eu.franz1007.gpstracker.database
 
+import eu.franz1007.exposed.postgis.ST_AsGeoJSON
+import eu.franz1007.exposed.postgis.ST_Force2D
+import eu.franz1007.exposed.postgis.ST_Length
+import eu.franz1007.exposed.postgis.ST_MakeLine
 import eu.franz1007.exposed.postgis.pointGeography
+import eu.franz1007.exposed.postgis.toGeography
+import eu.franz1007.exposed.postgis.toGeometry
 import eu.franz1007.gpstracker.model.*
 import eu.franz1007.gpstracker.uitl.Quintuple
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonUnquotedLiteral
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.putJsonObject
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
@@ -266,6 +278,37 @@ class GpsPointService(database: Database) {
                         )
                     }
             Track(trackUuid, startTimestamp, endTimestamp, points, category)
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    suspend fun readTrackGeoJson(uuid: Uuid): String? = dbQuery {
+        Tracks.leftJoin(GpsPoints).select(
+            Tracks.category,
+            Tracks.startTimestamp,
+            Tracks.endTimestamp,
+            GpsPoints.location.toGeometry().ST_MakeLine().ST_AsGeoJSON(),
+            GpsPoints.location.toGeometry().ST_MakeLine().ST_Force2D().toGeography().ST_Length()
+        ).where { Tracks.uuid eq uuid }.groupBy(Tracks.id).singleOrNull()?.let {
+            val distanceMeters =
+                it[GpsPoints.location.toGeometry().ST_MakeLine().ST_Force2D().toGeography().ST_Length()]
+            val startTimestamp = it[Tracks.startTimestamp]
+            val endTimestamp = it[Tracks.endTimestamp]
+            val averageSpeedKph =
+                ((distanceMeters / endTimestamp.minus(startTimestamp).inWholeSeconds) * 3.6).takeIf { speed -> speed.isFinite() }
+                    ?: 0.0
+            Json.encodeToString(buildJsonObject {
+                put("type", JsonPrimitive("Feature"))
+                put("geometry", JsonUnquotedLiteral(it[GpsPoints.location.toGeometry().ST_MakeLine().ST_AsGeoJSON()]))
+                put("uuid", JsonPrimitive(uuid.toString()))
+                putJsonObject("properties") {
+                    put("startTimestamp", JsonPrimitive(startTimestamp.toString()))
+                    put("endTimestamp", JsonPrimitive(endTimestamp.toString()))
+                    put("distanceMeters", JsonPrimitive(distanceMeters.toInt().toString()))
+                    put("category", JsonPrimitive(it[Tracks.category].toString()))
+                    put("averageSpeedKph", JsonPrimitive(averageSpeedKph.toString()))
+                }
+            })
         }
     }
 
