@@ -9,7 +9,7 @@ import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-enum class TRACK_CATEGORY {
+enum class TrackCategory {
     UNCATEGORIZED, CYCLING, RUNNING, HIKING
 }
 
@@ -21,17 +21,17 @@ data class TrackOnlyMetadata(
     val endTimestamp: Instant,
     val distanceMeters: Int,
     val averageSpeedKph: Double,
-    val category: TRACK_CATEGORY
+    val category: TrackCategory
 )
 
 @Serializable
 @OptIn(ExperimentalUuidApi::class)
 data class TrackNoPoints(
-    val uuid: Uuid, val startTimestamp: Instant, val endTimestamp: Instant, val category: TRACK_CATEGORY
+    val uuid: Uuid, val startTimestamp: Instant, val endTimestamp: Instant, val category: TrackCategory
 )
 
 data class TrackNoId(
-    val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>, val category: TRACK_CATEGORY
+    val startTimestamp: Instant, val endTimestamp: Instant, val points: List<GpsPointNoId>, val category: TrackCategory
 ) {
     companion object {
         fun fromGpxTrack(gpx: Gpx): TrackNoId {
@@ -50,7 +50,7 @@ data class TrackNoId(
                     edfa = -1
                 )
             }
-            return TrackNoId(points.first().timestamp, points.last().timestamp, points, TRACK_CATEGORY.UNCATEGORIZED)
+            return TrackNoId(points.first().timestamp, points.last().timestamp, points, TrackCategory.UNCATEGORIZED)
         }
     }
 }

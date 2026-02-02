@@ -22,7 +22,7 @@ class GpsPointService(database: Database) {
         val uuid = uuid("uuid").index().autoGenerate()
         val startTimestamp = timestamp("startTimestamp")
         val endTimestamp = timestamp("endTimestamp")
-        val category = enumeration<TRACK_CATEGORY>("category")
+        val category = enumeration<TrackCategory>("category")
         override val primaryKey = PrimaryKey(id)
     }
 
@@ -52,7 +52,7 @@ class GpsPointService(database: Database) {
                 Tracks.insert {
                     it[startTimestamp] = point.timestamp
                     it[endTimestamp] = point.timestamp
-                    it[category] = TRACK_CATEGORY.UNCATEGORIZED
+                    it[category] = TrackCategory.UNCATEGORIZED
                 }[Tracks.id]
             } else {
                 latest.first
@@ -78,7 +78,7 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun categorizeTrack(trackId: Uuid, newCategory: TRACK_CATEGORY): TrackNoPoints? {
+    suspend fun categorizeTrack(trackId: Uuid, newCategory: TrackCategory): TrackNoPoints? {
         return dbQuery {
             return@dbQuery Tracks.updateReturning(where = { Tracks.uuid eq trackId }) {
                 it[uuid] = Uuid.random()

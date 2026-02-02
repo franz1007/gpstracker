@@ -4,7 +4,7 @@ package eu.franz1007.gpstracker
 
 import eu.franz1007.gpstracker.database.GpsPointService
 import eu.franz1007.gpstracker.model.GpsPointNoId
-import eu.franz1007.gpstracker.model.TRACK_CATEGORY
+import eu.franz1007.gpstracker.model.TrackCategory
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -122,7 +122,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         }
                     }
                     val newCategory = call.parameters.getOrFail("category")
-                    val changedTrack = gpsPointService.categorizeTrack(trackId, TRACK_CATEGORY.valueOf(newCategory))
+                    val changedTrack = gpsPointService.categorizeTrack(trackId, TrackCategory.valueOf(newCategory))
                     if (changedTrack == null) {
                         call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
                     } else {
@@ -136,8 +136,8 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             }
             route("/trackCategories") {
                 get {
-                    println(TRACK_CATEGORY.entries.toTypedArray())
-                    call.respond(TRACK_CATEGORY.entries.toTypedArray())
+                    println(TrackCategory.entries.toTypedArray())
+                    call.respond(TrackCategory.entries.toTypedArray())
                 }
             }
             webSocket("/ws") {
@@ -201,7 +201,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     TrackNoId.fromGpxTrack(parser.parseGpx(it.inputStream()))
                 }.toList()
                 tracks.forEach {
-                    gpsPointService.importTrack(it.copy(category = TRACK_CATEGORY.CYCLING))
+                    gpsPointService.importTrack(it.copy(category = TrackCategory.CYCLING))
                 }
             }
         }
