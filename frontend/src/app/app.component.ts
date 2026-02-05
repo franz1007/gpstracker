@@ -40,7 +40,7 @@ export class AppComponent {
     {
       label: 'Map',
       icon: 'pi pi-home',
-      route: '/'
+      route: '/map'
     },
     {
       label: 'Trackmanager',

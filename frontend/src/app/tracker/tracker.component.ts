@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal, linkedSignal, resource, effect } from '@angular/core';
+import { Component, signal, WritableSignal, linkedSignal, resource, effect, input } from '@angular/core';
 import { MapComponent } from './map/map.component';
 import { DrawerModule } from 'primeng/drawer'
 import { ButtonModule } from 'primeng/button'
@@ -17,6 +17,10 @@ import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
 })
 
 export class TrackerComponent {
+  trackId = input.required({
+    transform: (id: string | undefined) => id ?? 'latest',
+  });
+
   title = 'angular-leaflet-example';
   isExpanding = false;
   selection: WritableSignal<any> = signal(null)
@@ -56,29 +60,34 @@ export class TrackerComponent {
   private first: boolean = true
   constructor(private trackService: TrackService) {
     effect(() => {
-      console.log("Effect")
-      console.log(this.trackResource.status())
-      console.log(this.trackResource.value())
-      console.log(this.trackResource.isLoading())
       const value = this.trackResource.value()
       this.trackResource.status
-      console.log("Resource value")
-      console.log(value)
       if (value !== undefined) {
         const sorted = value.sort((a, b) => {
           a.startTimestamp.compareTo(b.endTimestamp)
           return a.startTimestamp.compareTo(b.startTimestamp)
         });
-        console.log("Received Tracks")
-        console.log(sorted)
         this.tracks = this.generateTreeNodesData(sorted)
         if (this.first) {
           this.first = false;
-          this.selection.set(this.tracks[0])
+          const found = this.findTreeNode(this.trackId())
+          found === undefined ? this.selection.set(this.tracks[0]) : this.selection.set(found)
         }
       }
     })
 
+  }
+
+  private findTreeNode(searchData: string): TreeNode<any> | undefined {
+    return this.flattenTreeNodes(this.tracks).find(treeNode =>
+      treeNode.data instanceof TrackNoPoints ? treeNode.data.uuid === searchData : treeNode.data === searchData
+    )
+  }
+
+  private flattenTreeNodes(treeNodes: TreeNode[]): TreeNode[] {
+    return treeNodes.flatMap(treeNode =>
+      [treeNode, treeNode.children === undefined ? [] : this.flattenTreeNodes(treeNode.children)]
+    ).flat()
   }
 
   private trackResource = resource(
