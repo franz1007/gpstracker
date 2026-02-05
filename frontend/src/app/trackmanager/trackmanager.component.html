@@ -7,6 +7,7 @@
             <th>Distance</th>
             <th>Average speed</th>
             <th>Category</th>
+            <th >Show on map</th>
         </tr>
         <tr>
             <th></th>
@@ -16,12 +17,13 @@
             <th>
                 <p-columnFilter field="category" matchMode="equals" [showClearButton]="false" [showMenu]="false">
                     <ng-template #filter let-value let-filter="filterCallback">
-                        <p-select [ngModel]="value" [options]="categories" appendTo="body" (onChange)="filter($event.value)"
-                            placeholder="Select One" [showClear]="true">
+                        <p-select [ngModel]="value" [options]="categories" appendTo="body"
+                            (onChange)="filter($event.value)" placeholder="Select One" [showClear]="true">
                         </p-select>
                     </ng-template>
                 </p-columnFilter>
             </th>
+            <th></th>
         </tr>
     </ng-template>
     <ng-template #body let-track>
@@ -33,6 +35,11 @@
             <td>
                 <p-select [options]="categories" [(ngModel)]="track.category"
                     (onChange)="onCategoryChange($event.value, track.uuid)" />
+            </td>
+            <td>
+                <a [routerLink]="['/map', track.uuid]">
+                <span class="pi pi-map-marker"></span>
+                </a>
             </td>
         </tr>
     </ng-template>

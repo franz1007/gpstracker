@@ -5,11 +5,12 @@ import { TrackService } from '../services/track.service';
 import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { TagModule } from 'primeng/tag';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
   selector: 'app-trackmanager',
-  imports: [TableModule, SelectModule, FormsModule, TagModule],
+  imports: [TableModule, SelectModule, FormsModule, TagModule, RouterLink],
   templateUrl: './trackmanager.component.html',
   styleUrl: './trackmanager.component.css'
 })
