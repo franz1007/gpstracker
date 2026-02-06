@@ -3,7 +3,7 @@ import * as L from 'leaflet';
 import { TrackService } from '../../services/track.service';
 import { SsePointService } from '../../services/ssePoint.service';
 import { TrackNoPoints } from './trackNoPoints';
-import { first, Subscription } from 'rxjs';
+import { first, firstValueFrom, Subscription } from 'rxjs';
 import { Feature, LineString, Position } from 'geojson';
 import { DateTimeFormatter, Instant, ZoneId } from '@js-joda/core';
 
@@ -137,7 +137,7 @@ export class MapComponent implements OnDestroy, OnInit {
     if (this.pointsSubscription != null) {
       this.pointsSubscription.unsubscribe()
     }
-    tracks.forEach(track => {
+    const result = tracks.map(track => {
       const line = this.lines.get(track.uuid)
       if (line === undefined) {
         const line = L.geoJSON(null,
@@ -157,15 +157,24 @@ export class MapComponent implements OnDestroy, OnInit {
             }
           })
         this.lines.set(track.uuid, line)
-        this.trackService.getTrackGeoJson(track).pipe(first()).subscribe(lineString => {
-          line.addData(lineString)
-          line.addTo(this.map)
+        const t = this.trackService.getTrackGeoJson(track)
+        return firstValueFrom(this.trackService.getTrackGeoJson(track)).then(lineString => {
+          return line.addData(lineString)
         })
       }
-      else {
-        line.addTo(this.map)
-      }
+      else return line
     })
+    Promise.allSettled(result.filter(value => value instanceof Promise)).then(value => {
+      const retreived = value.filter(promise => promise.status === "fulfilled").map(value => value.value)
+      const test = result.filter(value => value instanceof L.GeoJSON)
+      const group = L.featureGroup(
+        [...test, ...retreived]
+      )
+      group.addTo(this.map)
+      this.map.fitBounds(group.getBounds())
+    })
+
+    
   }
 
   showNoTrack() {
