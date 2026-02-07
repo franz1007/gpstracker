@@ -59,13 +59,31 @@ export class MapComponent implements OnDestroy, OnInit {
       }
     });
   }
+  getNumberFromLocalStorage(name: string, defaulValue: number): number {
+    const numberFromStorage = Number(localStorage.getItem(name))
+    return Number.isNaN(numberFromStorage) ? defaulValue : numberFromStorage
+  }
 
   ngOnInit() {
+    const storedZoom = this.getNumberFromLocalStorage("mapZoom", 7)
+    const storedLat = this.getNumberFromLocalStorage("mapLat", 49.65254208294224)
+    const storedLon = this.getNumberFromLocalStorage("mapLon", 10.635266687654777)
+    console.log("reload " + storedLat + " " + storedLon)
     this.map = L.map('map', {
-      center: [49.65254208294224, 10.635266687654777],
-      zoom: 7,
+      center: [storedLat, storedLon],
+      zoom: storedZoom,
       zoomControl: false,
     });
+    this.map.on("zoomend", ev => {
+      const zoom = this.map.getZoom()
+      localStorage.setItem("mapZoom", zoom.toString())
+    })
+    this.map.on("moveend", ev => {
+      const center = this.map.getCenter()
+      console.log("moveend" + center)
+      localStorage.setItem("mapLat", center.lat.toString())
+      localStorage.setItem("mapLon", center.lng.toString())
+    })
     L.control.zoom({ position: 'topright' }).addTo(this.map)
     const control = L.control.layers(undefined, undefined, {
       collapsed: true
@@ -114,7 +132,7 @@ export class MapComponent implements OnDestroy, OnInit {
       if (!this.map.hasLayer(this.latestLine)) {
         this.latestLine.addTo(this.map)
       }
-      this.map.fitBounds(this.latestLine.getBounds(), {maxZoom: this.map.getZoom()})
+      this.map.flyToBounds(this.latestLine.getBounds(), { maxZoom: this.map.getZoom() })
       const position: Position = lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]
       this.marker.setLatLng([position[1], position[0]])
       this.marker.setRadius(20)
@@ -172,10 +190,10 @@ export class MapComponent implements OnDestroy, OnInit {
         [...test, ...retreived]
       )
       group.addTo(this.map)
-      this.map.fitBounds(group.getBounds(), {maxZoom: this.map.getZoom()})
+      this.map.flyToBounds(group.getBounds(), { maxZoom: this.map.getZoom() })
     })
 
-    
+
   }
 
   showNoTrack() {
