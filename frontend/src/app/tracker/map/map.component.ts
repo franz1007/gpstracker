@@ -132,7 +132,7 @@ export class MapComponent implements OnDestroy, OnInit {
       if (!this.map.hasLayer(this.latestLine)) {
         this.latestLine.addTo(this.map)
       }
-      this.map.flyToBounds(this.latestLine.getBounds(), { maxZoom: this.map.getZoom() })
+      this.map.flyToBounds(this.latestLine.getBounds(), { maxZoom: this.map.getZoom() + 2 })
       const position: Position = lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]
       this.marker.setLatLng([position[1], position[0]])
       this.marker.setRadius(20)
@@ -190,7 +190,7 @@ export class MapComponent implements OnDestroy, OnInit {
         [...test, ...retreived]
       )
       group.addTo(this.map)
-      this.map.flyToBounds(group.getBounds(), { maxZoom: this.map.getZoom() })
+      this.map.flyToBounds(group.getBounds(), { maxZoom: this.map.getZoom() + 2 })
     })
 
 
