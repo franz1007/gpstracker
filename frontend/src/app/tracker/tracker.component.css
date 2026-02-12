@@ -1,10 +1,10 @@
 app-map {
-  height: 93vh;
+  height: 100%;
   width: 100%;
 }
 
 .container {
-  height: 93vh;
+  height: 94dvh;
   display: flex;
 }
 
@@ -21,8 +21,16 @@ app-map {
 }
 
 .container aside.expanding {
-  width: 30vh
+  width: 30em
 }
+
+@media (max-width: 599.98px) and (orientation: portrait),
+(max-width: 959.98px) and (orientation: landscape) {
+  #tree {
+    padding: 0
+  }
+}
+
 
 #map {
   position: absolute;

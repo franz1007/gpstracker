@@ -29,7 +29,7 @@ import { Menubar } from 'primeng/menubar';
         }
       </ng-template>
     </p-menubar>
-    <router-outlet />
+    <router-outlet style="heigth: 100%"/>
     `,
   styleUrl: './app.component.css',
   imports: [RouterOutlet, RouterLink, Menubar],
