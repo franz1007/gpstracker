@@ -176,24 +176,20 @@ export class MapComponent implements OnDestroy, OnInit {
             }
           })
         this.lines.set(track.uuid, line)
-        const t = this.trackService.getTrackGeoJson(track)
         return firstValueFrom(this.trackService.getTrackGeoJson(track)).then(lineString => {
           return line.addData(lineString)
         })
       }
       else return line
     })
-    Promise.allSettled(result.filter(value => value instanceof Promise)).then(value => {
-      const retreived = value.filter(promise => promise.status === "fulfilled").map(value => value.value)
-      const test = result.filter(value => value instanceof L.GeoJSON)
-      const group = L.featureGroup(
-        [...test, ...retreived]
-      )
-      group.addTo(this.map)
-      this.map.flyToBounds(group.getBounds(), { maxZoom: this.map.getZoom() + 2 })
-    })
-
-
+    const featureGroup = L.featureGroup(result.filter(value => value instanceof L.GeoJSON))
+    featureGroup.addTo(this.map)
+    const promises = result.filter(value => value instanceof Promise)
+    const resolved = promises.map(promise =>
+      promise.then(geoJson => featureGroup.addLayer(geoJson))
+    )
+    if (promises.length === 0) this.map.flyToBounds(featureGroup.getBounds(), { maxZoom: this.map.getZoom() + 2 })
+    else Promise.allSettled(resolved).then(_ => this.map.flyToBounds(featureGroup.getBounds(), { maxZoom: this.map.getZoom() + 2 }))
   }
 
   showNoTrack() {
