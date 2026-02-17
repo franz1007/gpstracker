@@ -8,3 +8,4 @@ npm run build --prefix frontend
 scp backend/gpstracker/build/libs/gpstracker-all.jar $DEPLOY_SERVER:/opt/gpstracker-backend/
 ssh $DEPLOY_SERVER systemctl --user restart gpstracker-backend
 rsync --delete -r frontend/dist/angular-leaflet-example/browser/ $DEPLOY_SERVER:/var/www/gpstracker-ng
+scp frontend/dist/angular-leaflet-example/3rdpartylicenses.txt $DEPLOY_SERVER:/var/www/gpstracker-ng
