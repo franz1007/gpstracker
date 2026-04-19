@@ -43,7 +43,19 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             val etfa = call.parameters.getOrFail<Long>("etfa").let { it1 -> Instant.fromEpochMilliseconds(it1) }
             val eda = call.parameters.getOrFail<Int>("eda")
             val edfa = call.parameters.getOrFail<Int>("edfa")
-            val point = GpsPointNoId(timestamp, lat, lon, hdop, altitude, speed, bearing, eta, etfa, eda, edfa)
+            val point = GpsPointNoId(
+                timestamp = timestamp,
+                lat = lat,
+                lon = lon,
+                hdop = hdop,
+                altitude = altitude,
+                speed = speed,
+                bearing = bearing,
+                eta = eta,
+                etfa = etfa,
+                eda = eda,
+                edfa = edfa
+            )
             val id = gpsPointService.addPoint(point)
             connections.forEach {
                 it.sendSerialized(point)

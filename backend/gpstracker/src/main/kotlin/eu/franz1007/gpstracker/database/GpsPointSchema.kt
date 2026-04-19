@@ -69,7 +69,7 @@ class GpsPointService(database: Database) {
                 it[eda] = point.eda
                 it[edfa] = point.edfa
                 it[trackId] = currentTrackId
-                it[location] = Point(point.lat, point.lon, point.altitude)
+                it[location] = Point(point.lon, point.lat, point.altitude)
             }[GpsPoints.id]
             Tracks.update({ Tracks.id eq currentTrackId }) {
                 it[endTimestamp] = point.timestamp
