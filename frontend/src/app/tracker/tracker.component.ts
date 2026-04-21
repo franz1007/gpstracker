@@ -64,8 +64,7 @@ export class TrackerComponent {
       this.trackResource.status
       if (value !== undefined) {
         const sorted = value.sort((a, b) => {
-          a.startTimestamp.compareTo(b.endTimestamp)
-          return a.startTimestamp.compareTo(b.startTimestamp)
+          return b.startTimestamp.compareTo(a.startTimestamp)
         });
         this.tracks = this.generateTreeNodesData(sorted)
         if (this.first) {

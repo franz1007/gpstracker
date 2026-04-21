@@ -86,8 +86,7 @@ export class TrackService {
     }) as Array<TrackNoPoints>
     console.log(tracks)
     const sorted = tracks.sort((a, b) => {
-      a.startTimestamp.compareTo(b.endTimestamp)
-      return a.startTimestamp.compareTo(b.startTimestamp)
+      return b.startTimestamp.compareTo(a.startTimestamp)
     });
 
     const test = sorted.map(async (track) => {
