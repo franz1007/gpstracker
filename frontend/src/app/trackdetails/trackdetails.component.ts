@@ -1,4 +1,4 @@
-import { Component, signal, WritableSignal } from '@angular/core';
+import { Component, effect, input, InputSignal, signal, WritableSignal } from '@angular/core';
 import {  UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
 import { TrackMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
@@ -12,8 +12,12 @@ import { firstValueFrom } from 'rxjs';
 })
 export class TrackdetailsComponent {
 
+  trackId : InputSignal<string> = input.required<string>();
   constructor(private trackService: TrackService) {
-    this.setTrack("f0c85ae2-e7ff-401c-a42d-5033ce508ada")
+    effect(() => {
+      const id = this.trackId()
+      this.setTrack(id)
+    })
   }
 
   dataSignal: WritableSignal<any> = signal(null)

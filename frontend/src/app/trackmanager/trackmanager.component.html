@@ -7,7 +7,8 @@
             <th>Distance</th>
             <th>Average speed</th>
             <th>Category</th>
-            <th >Show on map</th>
+            <th>Show on map</th>
+            <th>Details</th>
         </tr>
         <tr>
             <th></th>
@@ -39,6 +40,11 @@
             <td>
                 <a [routerLink]="['/map', track.uuid]">
                 <span class="pi pi-map-marker"></span>
+                </a>
+            </td>
+            <td>
+                <a [routerLink]="['/details', track.uuid]">
+                <span class="pi pi-chart-line"></span>
                 </a>
             </td>
         </tr>

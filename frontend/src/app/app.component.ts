@@ -46,12 +46,7 @@ export class AppComponent {
       label: 'Trackmanager',
       icon: 'pi pi-palette',
       route: '/trackmanager'
-    },
-    {
-      label: 'Trackdetails',
-      icon: 'pi pi-palette',
-      route: '/details'
-    },
+    }
 
   ];
 }

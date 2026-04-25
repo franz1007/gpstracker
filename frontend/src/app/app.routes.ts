@@ -25,7 +25,11 @@ export const routes: Routes = [
     title: 'Trackdetails',
     component: TrackdetailsComponent,
   },
-
+  {
+    path: 'details/:trackId',
+    title: 'Trackdetails',
+    component: TrackdetailsComponent,
+  },
   {
     path: '**',
     redirectTo: '/map',
