@@ -35,7 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
-
+java_pid*
 Wandern
 Fahrrad
 Laufen

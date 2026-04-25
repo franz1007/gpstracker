@@ -121,66 +121,83 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                                 )
                             }
                         }
-
                     }
                 }
-                post("/updateCategory") {
+                get("/noPoints/{trackId}") {
                     val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
                         runCatching {
                             Uuid.parse(uuidString)
                         }.getOrElse { throwable ->
                             call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
-                            return@post
+                            return@get
                         }
                     }
-                    val newCategory = call.parameters.getOrFail("category")
-                    val changedTrack = gpsPointService.categorizeTrack(trackId, TrackCategory.valueOf(newCategory))
-                    if (changedTrack == null) {
-                        call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
-                    } else {
-                        call.respond(changedTrack)
-                    }
-                }
 
-                get("/latest") {
-                    call.respondNullable(gpsPointService.readLatestTrackNoPoints())
-                }
-            }
-            route("/trackCategories") {
-                get {
-                    println(TrackCategory.entries.toTypedArray())
-                    call.respond(TrackCategory.entries.toTypedArray())
-                }
-            }
-            webSocket("/ws") {
-                println("Adding user!")
-                connections += this
-                println(connections)
-                try {
-                    for (frame in incoming) {
-                        println(frame)
+                    val track = gpsPointService.readTrackNoPoints(trackId)
+
+                    if (track == null) {
+                        call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
+                    } else {
+                        call.respond(track)
                     }
-                } catch (e: Exception) {
-                    println(e.localizedMessage)
-                } finally {
-                    println("Removing $this!")
-                    connections -= this
                 }
             }
-            sse("/sse") {
-                println("Adding sse connection")
-                sseConnections += this
-                while (true) {
-                    try {
-                        send(ServerSentEvent("ping", "ping", null, 1_000, null))
-                    } catch (e: IOException) {
-                        sseConnections.remove(this)
+
+            post("/updateCategory") {
+                val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
+                    runCatching {
+                        Uuid.parse(uuidString)
+                    }.getOrElse { throwable ->
+                        call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
+                        return@post
                     }
-                    delay(10000)
                 }
+                val newCategory = call.parameters.getOrFail("category")
+                val changedTrack = gpsPointService.categorizeTrack(trackId, TrackCategory.valueOf(newCategory))
+                if (changedTrack == null) {
+                    call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
+                } else {
+                    call.respond(changedTrack)
+                }
+            }
+
+            get("/latest") {
+                call.respondNullable(gpsPointService.readLatestTrackNoPoints())
             }
         }
-
+        route("/trackCategories") {
+            get {
+                println(TrackCategory.entries.toTypedArray())
+                call.respond(TrackCategory.entries.toTypedArray())
+            }
+        }
+        webSocket("/ws") {
+            println("Adding user!")
+            connections += this
+            println(connections)
+            try {
+                for (frame in incoming) {
+                    println(frame)
+                }
+            } catch (e: Exception) {
+                println(e.localizedMessage)
+            } finally {
+                println("Removing $this!")
+                connections -= this
+            }
+        }
+        sse("/sse") {
+            println("Adding sse connection")
+            sseConnections += this
+            while (true) {
+                try {
+                    send(ServerSentEvent("ping", "ping", null, 1_000, null))
+                } catch (e: IOException) {
+                    sseConnections.remove(this)
+                }
+                delay(10000)
+            }
+        }
 
     }
 

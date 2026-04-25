@@ -136,6 +136,16 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun readTrackNoPoints(uuid: Uuid): TrackNoPoints? {
+        return dbQuery {
+            Tracks.selectAll().where { Tracks.uuid eq uuid }.limit(1).map {
+                TrackNoPoints(
+                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                )
+            }.singleOrNull()
+        }
+    }
+
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun readTrackMetadata(
         uuid: Uuid

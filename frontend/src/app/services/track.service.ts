@@ -18,12 +18,29 @@ export class TrackService {
   trackMetadataUrl: string = environment.apiUrl + "/api/tracks/metadata"
   categoriesUrl: string = environment.apiUrl + "/api/trackCategories"
   updateCategoriesUrl: string = environment.apiUrl + "/api/tracks/updateCategory"
-
+  trackNoPointsUrl: string = environment.apiUrl + "/api/tracks/noPoints"
 
   constructor(private http: HttpClient, private idbService: IdbcacheService) { }
 
   async getLatestTrackJson(): Promise<Feature<GeoJSON.LineString>> {
     return firstValueFrom(this.getTrackGeoJsonFromUrl("latest"))
+  }
+
+
+   async getTrackNoPoints(trackId: string): Promise<TrackNoPoints> {
+    const tracksString = await fetch(this.trackNoPointsUrl+ "/" + trackId )
+    const text = await tracksString.text()
+    return JSON.parse(text, (key, value) => {
+      if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as TrackNoPoints
+  }
+
+  async getTrackGeoJsonPromise(track: TrackNoPoints): Promise<Feature<GeoJSON.LineString>>{
+    return firstValueFrom(this.getTrackGeoJson(track))
   }
 
   getTrackGeoJson(track: TrackNoPoints): Observable<Feature<GeoJSON.LineString>> {
