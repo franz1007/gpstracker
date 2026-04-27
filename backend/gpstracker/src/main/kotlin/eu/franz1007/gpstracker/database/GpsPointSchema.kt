@@ -5,6 +5,7 @@ import eu.franz1007.gpstracker.database.migration.database
 import eu.franz1007.gpstracker.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
 import net.postgis.jdbc.geometry.Point
 import org.jetbrains.exposed.v1.core.*
@@ -226,7 +227,7 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun getTrackWithDistances() = dbQuery {
+    suspend fun getTrackWithDistances(trackUuid: Uuid) = dbQuery {
         val segmentDistance = GpsPoints.location.ST_Distance(
             Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
                 .orderBy(GpsPoints.timestamp, SortOrder.DESC)
@@ -234,17 +235,22 @@ class GpsPointService(database: Database) {
         val segmentEnd =
             NotNullLag(GpsPoints.timestamp, defaultValue = GpsPoints.timestamp).over().partitionBy(GpsPoints.trackId)
                 .orderBy(GpsPoints.timestamp, SortOrder.DESC)
-        GpsPoints.select(
+        GpsPoints.innerJoin(Tracks).select(
             GpsPoints.timestamp, segmentEnd, segmentDistance,
-        ).where { GpsPoints.trackId eq 1 }.orderBy(GpsPoints.timestamp, SortOrder.DESC).map {
+        ).where { Tracks.uuid eq trackUuid }.orderBy(GpsPoints.timestamp, SortOrder.DESC).map {
             GpsPointSegment(it[segmentEnd].minus(it[GpsPoints.timestamp]), it[segmentDistance])
         }.let {
-            if (it.size >= 2) {
-                it.subList(1, it.lastIndex)
+            if (it.isEmpty()) {
+                null
             } else {
-                listOf()
+                if (it.size == 1) {
+                    listOf()
+
+                } else {
+                    it.subList(1, it.lastIndex)
+                }
             }
-        }.forEach { println(it) }
+        }
     }
 
 
@@ -253,9 +259,7 @@ class GpsPointService(database: Database) {
     suspend fun readLatestTrackGeoJson() = readSingleTrackGeoJson(Pair(Tracks.endTimestamp, SortOrder.DESC))
 }
 
-data class GpsPointSegment(val duration: Duration, val distance: Double)
-
 private suspend fun <T> dbQuery(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO, db = database) { block() }
+    newSuspendedTransaction(Dispatchers.IO) { block() }
 
 

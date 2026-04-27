@@ -123,8 +123,26 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         }
                     }
                 }
+                get("/segmentMetadata/{trackId}"){
+                    val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
+                        runCatching {
+                            Uuid.parse(uuidString)
+                        }.getOrElse { throwable ->
+                            call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
+                            return@get
+                        }
+                    }
+
+                    val track = gpsPointService.getTrackWithDistances(trackId)
+
+                    if (track == null) {
+                        call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
+                    } else {
+                        call.respond(track)
+                    }
+                }
                 get("/noPoints/{trackId}") {
-                    val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
+                    val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
                         runCatching {
                             Uuid.parse(uuidString)
                         }.getOrElse { throwable ->
@@ -222,10 +240,6 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             lon = 13.0439900,
             altitude = 520.0
         )
-
-        run {
-            gpsPointService.getTrackWithDistances()
-        }
 
         /*
         run {
