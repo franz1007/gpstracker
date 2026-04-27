@@ -253,13 +253,35 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun getPointDistances() = dbQuery {
+        val segmentDistance = GpsPoints.location.ST_Distance(
+            Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
+                .orderBy(GpsPoints.timestamp, SortOrder.DESC)
+        ).alias("segmentDistance")
+        val subquery = GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance).alias("subquery")
+        val totalDistance = subquery[segmentDistance].sum().over().partitionBy(subquery[GpsPoints.trackId])
+            .orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC)
+        subquery.select(
+            subquery[GpsPoints.timestamp],
+            subquery[segmentDistance],
+            totalDistance
+        ).where { subquery[GpsPoints.trackId] eq 1 }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).forEach {
+            println(
+                Triple(
+                    it[subquery[GpsPoints.timestamp]],
+                    it[subquery[segmentDistance]],
+                    it[totalDistance]
+                )
+            )
+        }
+    }
+
 
     suspend fun readTrackGeoJson(uuid: Uuid) = readSingleTrackGeoJson { Tracks.uuid eq uuid }
 
     suspend fun readLatestTrackGeoJson() = readSingleTrackGeoJson(Pair(Tracks.endTimestamp, SortOrder.DESC))
 }
 
-private suspend fun <T> dbQuery(block: suspend () -> T): T =
-    newSuspendedTransaction(Dispatchers.IO) { block() }
+private suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
 
 

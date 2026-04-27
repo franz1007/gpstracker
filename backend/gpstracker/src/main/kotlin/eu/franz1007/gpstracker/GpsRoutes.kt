@@ -241,6 +241,10 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             altitude = 520.0
         )
 
+        run {
+            gpsPointService.getPointDistances()
+        }
+
         /*
         run {
             run {
