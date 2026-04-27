@@ -1,1 +1,2 @@
 <p-chart type="line" [data]="data" [options]="options" height="40vh"></p-chart>
+<p-chart type="line" [data]="elevationData" [options]="options" height="40vh" (onDataSelect)=selected($event)></p-chart>

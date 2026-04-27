@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, from, map, Observable } from 'rxjs';
-import { Instant } from '@js-joda/core';
-import { TrackNoPoints, TrackMetadata } from '../tracker/map/trackNoPoints';
+import { Duration, Instant } from '@js-joda/core';
+import { TrackNoPoints, TrackMetadata, SegmentMetadata } from '../tracker/map/trackNoPoints';
 import { Feature } from 'geojson';
 import { IdbcacheService } from '../idbcache.service';
 
@@ -19,6 +19,7 @@ export class TrackService {
   categoriesUrl: string = environment.apiUrl + "/api/trackCategories"
   updateCategoriesUrl: string = environment.apiUrl + "/api/tracks/updateCategory"
   trackNoPointsUrl: string = environment.apiUrl + "/api/tracks/noPoints"
+  segmentMetadataUrl: string = environment.apiUrl + "/api/tracks/segmentMetadata"
 
   constructor(private http: HttpClient, private idbService: IdbcacheService) { }
 
@@ -37,6 +38,19 @@ export class TrackService {
         return value;
       }
     }) as TrackNoPoints
+  }
+
+  async getSegmentMetadata(trackId: string): Promise<SegmentMetadata[]> {
+    const tracksString = await fetch(this.segmentMetadataUrl+ "/" + trackId )
+    const text = await tracksString.text()
+    return JSON.parse(text, (key, value) => {
+      if (key === "duration") {
+        return Duration.parse(value)
+      }
+      else{
+        return value
+      }
+    }) as SegmentMetadata[]
   }
 
   async getTrackGeoJsonPromise(track: TrackNoPoints): Promise<Feature<GeoJSON.LineString>>{

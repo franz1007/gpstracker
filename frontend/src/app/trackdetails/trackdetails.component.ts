@@ -21,8 +21,8 @@ export class TrackdetailsComponent {
   }
 
   dataSignal: WritableSignal<any> = signal(null)
-  data = {
-  };
+  data = {};
+  elevationData = {}
   options = {
     scales: {
       x: {
@@ -32,6 +32,34 @@ export class TrackdetailsComponent {
   };
   private setTrack(trackId: string){
     this.trackService.getTrackNoPoints(trackId).then(track => {
+      this.trackService.getSegmentMetadata(track.uuid).then(metadata => {
+        console.log(metadata)
+        const durations = metadata.map((value, index) => {
+          return {
+            x: index,
+            y: value.duration.seconds()
+          }
+        })
+        this.data = {
+          datasets: [
+          {
+            label: 'Duration',
+            data: durations,
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: 'Distance',
+            data: metadata.map((value, index) => {
+              return {
+                x: index,
+                y: value.distance
+              }}),
+              fill: false,
+              tension: 0.4
+          }]
+        }
+      })
       this.trackService.getTrackGeoJsonPromise(track).then(metadata => {
         console.log(metadata)
         const heights = metadata.geometry.coordinates.map((coord,index) => {
@@ -40,19 +68,19 @@ export class TrackdetailsComponent {
             y: coord[2]
           }
         })
-        console.log(heights)
-        const data = {
+        this.elevationData = {
           datasets: [
           {
-            label: 'First Dataset',
+            label: 'Elevation',
             data: heights,
             fill: false,
             tension: 0.4
           }]
         }
-        this.data = data
       })
     })
   }
-
+  selected(ev: Event){
+    console.log(ev)
+  }
 }

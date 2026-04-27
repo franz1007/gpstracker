@@ -38,3 +38,12 @@ export class TrackMetadata {
         console.log(this.startTimestampString)
     }
 }
+
+export class SegmentMetadata {
+  duration: Duration;
+  distance: number;
+  constructor(duration: Duration, distance: number){
+    this.duration = duration;
+    this.distance = distance;
+  }
+}
