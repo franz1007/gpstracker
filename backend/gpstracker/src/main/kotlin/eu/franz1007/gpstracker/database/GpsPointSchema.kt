@@ -258,20 +258,18 @@ class GpsPointService(database: Database) {
             Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
                 .orderBy(GpsPoints.timestamp, SortOrder.DESC)
         ).alias("segmentDistance")
-        val subquery = GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance).alias("subquery")
+        val subquery = GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance, GpsPoints.speed).alias("subquery")
         val totalDistance = subquery[segmentDistance].sum().over().partitionBy(subquery[GpsPoints.trackId])
             .orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC)
         subquery.select(
             subquery[GpsPoints.timestamp],
-            subquery[segmentDistance],
+            subquery[GpsPoints.speed],
             totalDistance
-        ).where { subquery[GpsPoints.trackId] eq 1 }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).forEach {
-            println(
-                Triple(
-                    it[subquery[GpsPoints.timestamp]],
-                    it[subquery[segmentDistance]],
-                    it[totalDistance]
-                )
+        ).where { subquery[GpsPoints.trackId] eq 1 }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).map{
+            PointMetadata(
+                timestamp = it[subquery[GpsPoints.timestamp]],
+                distance = it[totalDistance],
+                speed = it[subquery[GpsPoints.speed]]
             )
         }
     }

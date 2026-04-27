@@ -10,4 +10,4 @@ import kotlin.time.Instant
 @Serializable
 data class GpsPointSegment(val duration: Duration, val distance: Double)
 @Serializable
-data class PointMetadata(val timestamp: Instant, val distance: Double, val elevation: Double)
+data class PointMetadata(val timestamp: Instant, val distance: Double, val speed: Double)
