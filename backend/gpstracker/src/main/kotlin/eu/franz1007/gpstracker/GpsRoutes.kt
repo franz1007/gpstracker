@@ -141,10 +141,9 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         call.respond(track)
                     }
                 }
-            }
 
-            post("/updateCategory") {
-                val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
+                post("/updateCategory") {
+                    val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
                     runCatching {
                         Uuid.parse(uuidString)
                     }.getOrElse { throwable ->
@@ -164,11 +163,13 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             get("/latest") {
                 call.respondNullable(gpsPointService.readLatestTrackNoPoints())
             }
-        }
-        route("/trackCategories") {
-            get {
-                println(TrackCategory.entries.toTypedArray())
-                call.respond(TrackCategory.entries.toTypedArray())
+            }
+
+            route("/trackCategories") {
+                get {
+                    println(TrackCategory.entries.toTypedArray())
+                    call.respond(TrackCategory.entries.toTypedArray())
+                }
             }
         }
         webSocket("/ws") {
@@ -221,6 +222,10 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             lon = 13.0439900,
             altitude = 520.0
         )
+
+        run {
+            gpsPointService.getTrackWithDistances()
+        }
 
         /*
         run {

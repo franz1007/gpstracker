@@ -14,7 +14,27 @@ import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.WindowFunction
 import org.jetbrains.exposed.v1.core.WindowFunctionDefinition
 import org.jetbrains.exposed.v1.core.append
+import org.jetbrains.exposed.v1.core.intLiteral
 import org.jetbrains.exposed.v1.core.vendors.currentDialect
+
+class NotNullLag<T>(
+    /** Returns the expression from which the rows are counted. */
+    val expr: ExpressionWithColumnType<T>,
+    /** Returns number of rows before the current row. */
+    val offset: ExpressionWithColumnType<Int> = intLiteral(1),
+    /** Returns value that is used if no row found at such offset. */
+    val defaultValue: ExpressionWithColumnType<T>
+) : WindowFunction<T> {
+    override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
+        append("LAG(", expr, ", ", offset)
+        append(", ", defaultValue)
+        append(")")
+    }
+
+    override fun over(): WindowFunctionDefinition<T> {
+        return WindowFunctionDefinition(expr.columnType, this)
+    }
+}
 
 @Suppress("ClassName")
 class ST_AsGeoJSONFunction<T : Geometry>(
@@ -110,6 +130,19 @@ class ST_LengthFunction<T : Geometry>(
     }
 }
 
+@Suppress("ClassName")
+class ST_DistanceFunction<T : Geometry>(
+    val expr: Expression<T>, val expr2: Expression<T?>
+) : Function<Double>(DoubleColumnType()) {
+    override fun toQueryBuilder(queryBuilder: QueryBuilder): Unit = queryBuilder {
+        append("ST_Distance", '(')
+        append(expr)
+        append(", ")
+        append(expr2)
+        append(')')
+    }
+}
+
 
 @Suppress("FunctionName")
 fun <T : Geometry> Expression<T>.ST_AsGeoJSON() = ST_AsGeoJSONFunction(this)
@@ -124,3 +157,6 @@ fun <T : Geometry> ExpressionWithColumnType<T>.ST_Force2D() = ST_Force2DFunction
 
 @Suppress("FunctionName")
 fun <T : Geometry> ExpressionWithColumnType<T>.ST_Length() = ST_LengthFunction(this)
+
+@Suppress("FunctionName")
+fun <T : Geometry> ExpressionWithColumnType<T>.ST_Distance(expr2: Expression<T?>) = ST_DistanceFunction(this, expr2)
