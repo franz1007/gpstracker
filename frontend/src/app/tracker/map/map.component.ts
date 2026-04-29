@@ -6,6 +6,7 @@ import { TrackNoPoints } from './trackNoPoints';
 import { first, firstValueFrom, Subscription } from 'rxjs';
 import { Feature, LineString, Position } from 'geojson';
 import { DateTimeFormatter, Instant, ZoneId } from '@js-joda/core';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
@@ -169,8 +170,12 @@ export class MapComponent implements OnDestroy, OnInit {
                 timestampParagraph.innerText = "Timestamp: " + Instant.parse(feature.properties["startTimestamp"]).atZone(ZoneId.SYSTEM).format(DateTimeFormatter.ofPattern('yyyy-MM-dd HH:mm'))
                 const distanceParagraph = document.createElement("p")
                 distanceParagraph.innerText = "Distance (meters): " + feature.properties["distanceMeters"]
+                const detailsLink = document.createElement("a")
+                detailsLink.href = "/details/" + feature.properties["uuid"]
+                detailsLink.innerHTML = "Details"
                 popup.appendChild(timestampParagraph)
                 popup.appendChild(distanceParagraph)
+                popup.appendChild(detailsLink)
                 layer.bindPopup(popup)
               }
             }

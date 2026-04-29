@@ -222,6 +222,7 @@ class GpsPointService(database: Database) {
                     put("distanceMeters", JsonPrimitive(distanceMeters.toInt().toString()))
                     put("category", JsonPrimitive(it[Tracks.category].toString()))
                     put("averageSpeedKph", JsonPrimitive(averageSpeedKph.toString()))
+                    put("uuid", JsonPrimitive(it[Tracks.uuid].toString()))
                 }
             })
         }
@@ -253,22 +254,21 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun getPointDistances() = dbQuery {
+    suspend fun getPointDistances(trackUuid: Uuid) = dbQuery {
         val segmentDistance = GpsPoints.location.ST_Distance(
             Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
                 .orderBy(GpsPoints.timestamp, SortOrder.DESC)
         ).alias("segmentDistance")
-        val subquery = GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance, GpsPoints.speed).alias("subquery")
+        val subquery =
+            GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance, GpsPoints.speed).alias("subquery")
         val totalDistance = subquery[segmentDistance].sum().over().partitionBy(subquery[GpsPoints.trackId])
             .orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC)
-        subquery.select(
-            subquery[GpsPoints.timestamp],
-            subquery[GpsPoints.speed],
-            totalDistance
-        ).where { subquery[GpsPoints.trackId] eq 1 }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).map{
+        Tracks.innerJoin(subquery).select(
+            subquery[GpsPoints.timestamp], subquery[GpsPoints.speed], totalDistance
+        ).where { Tracks.uuid eq trackUuid }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).map {
             PointMetadata(
                 timestamp = it[subquery[GpsPoints.timestamp]],
-                distance = it[totalDistance],
+                distance = it[totalDistance] ?: 0.0,
                 speed = it[subquery[GpsPoints.speed]]
             )
         }

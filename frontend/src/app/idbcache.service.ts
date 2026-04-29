@@ -92,7 +92,7 @@ export class IdbcacheService {
   }
 
   async initDB() {
-    return await openDB<MyDB>('my-db', 3, {
+    return await openDB<MyDB>('my-db', 4, {
       upgrade(db) {
         db.createObjectStore("features")
         db.createObjectStore("metadata")

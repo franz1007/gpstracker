@@ -3,10 +3,11 @@ import {  UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
 import { TrackMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-trackdetails',
-  imports: [UIChart],
+  imports: [UIChart, RouterLink],
   templateUrl: './trackdetails.component.html',
   styleUrl: './trackdetails.component.css',
 })

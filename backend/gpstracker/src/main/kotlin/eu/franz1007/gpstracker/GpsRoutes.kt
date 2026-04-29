@@ -242,7 +242,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
         )
 
         run {
-            gpsPointService.getPointDistances()
+            gpsPointService.getPointDistances(Uuid.parse(""))
         }
 
         /*
