@@ -123,7 +123,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         }
                     }
                 }
-                get("/segmentMetadata/{trackId}"){
+                get("/segmentMetadata/{trackId}") {
                     val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
                         runCatching {
                             Uuid.parse(uuidString)
@@ -141,6 +141,26 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         call.respond(track)
                     }
                 }
+
+                get("/pointMetadata/{trackId]") {
+                    val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
+                        runCatching {
+                            Uuid.parse(uuidString)
+                        }.getOrElse { throwable ->
+                            call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
+                            return@get
+                        }
+                    }
+
+                    val track = gpsPointService.getPointDistances(trackId)
+
+                    if (track == null) {
+                        call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
+                    } else {
+                        call.respond(track)
+                    }
+                }
+
                 get("/noPoints/{trackId}") {
                     val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
                         runCatching {
@@ -162,30 +182,29 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
 
                 post("/updateCategory") {
                     val trackId = call.parameters.getOrFail("trackid").let { uuidString ->
-                    runCatching {
-                        Uuid.parse(uuidString)
-                    }.getOrElse { throwable ->
-                        call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
-                        return@post
+                        runCatching {
+                            Uuid.parse(uuidString)
+                        }.getOrElse { throwable ->
+                            call.respond(HttpStatusCode.BadRequest, throwable.message.orEmpty())
+                            return@post
+                        }
+                    }
+                    val newCategory = call.parameters.getOrFail("category")
+                    val changedTrack = gpsPointService.categorizeTrack(trackId, TrackCategory.valueOf(newCategory))
+                    if (changedTrack == null) {
+                        call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
+                    } else {
+                        call.respond(changedTrack)
                     }
                 }
-                val newCategory = call.parameters.getOrFail("category")
-                val changedTrack = gpsPointService.categorizeTrack(trackId, TrackCategory.valueOf(newCategory))
-                if (changedTrack == null) {
-                    call.respond(HttpStatusCode.BadRequest, "No track available with this uuid")
-                } else {
-                    call.respond(changedTrack)
-                }
-            }
 
-            get("/latest") {
-                call.respondNullable(gpsPointService.readLatestTrackNoPoints())
-            }
+                get("/latest") {
+                    call.respondNullable(gpsPointService.readLatestTrackNoPoints())
+                }
             }
 
             route("/trackCategories") {
                 get {
-                    println(TrackCategory.entries.toTypedArray())
                     call.respond(TrackCategory.entries.toTypedArray())
                 }
             }
@@ -240,10 +259,6 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
             lon = 13.0439900,
             altitude = 520.0
         )
-
-        run {
-            gpsPointService.getPointDistances(Uuid.parse(""))
-        }
 
         /*
         run {

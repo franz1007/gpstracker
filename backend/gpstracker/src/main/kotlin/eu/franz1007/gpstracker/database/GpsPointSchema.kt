@@ -263,7 +263,7 @@ class GpsPointService(database: Database) {
             GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance, GpsPoints.speed).alias("subquery")
         val totalDistance = subquery[segmentDistance].sum().over().partitionBy(subquery[GpsPoints.trackId])
             .orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC)
-        Tracks.innerJoin(subquery).select(
+        Tracks.join(subquery, JoinType.INNER, Tracks.id, subquery[GpsPoints.trackId]).select(
             subquery[GpsPoints.timestamp], subquery[GpsPoints.speed], totalDistance
         ).where { Tracks.uuid eq trackUuid }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).map {
             PointMetadata(
@@ -271,7 +271,7 @@ class GpsPointService(database: Database) {
                 distance = it[totalDistance] ?: 0.0,
                 speed = it[subquery[GpsPoints.speed]]
             )
-        }
+        }.takeIf { !it.isEmpty() }
     }
 
 
