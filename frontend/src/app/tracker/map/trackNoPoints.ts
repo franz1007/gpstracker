@@ -47,3 +47,14 @@ export class SegmentMetadata {
     this.distance = distance;
   }
 }
+
+export class PointMetadata {
+  timestamp: Instant;
+  distance: number;
+  speed: number;
+  constructor(timestamp: Instant, distance: number, speed: number){
+    this.timestamp = timestamp;
+    this.distance = distance;
+    this.speed = speed;
+  }
+}

@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { firstValueFrom, from, map, Observable } from 'rxjs';
 import { Duration, Instant } from '@js-joda/core';
-import { TrackNoPoints, TrackMetadata, SegmentMetadata } from '../tracker/map/trackNoPoints';
+import { TrackNoPoints, TrackMetadata, SegmentMetadata, PointMetadata } from '../tracker/map/trackNoPoints';
 import { Feature } from 'geojson';
 import { IdbcacheService } from '../idbcache.service';
 
@@ -20,6 +20,7 @@ export class TrackService {
   updateCategoriesUrl: string = environment.apiUrl + "/api/tracks/updateCategory"
   trackNoPointsUrl: string = environment.apiUrl + "/api/tracks/noPoints"
   segmentMetadataUrl: string = environment.apiUrl + "/api/tracks/segmentMetadata"
+  pointMetadataUrl: string = environment.apiUrl + "/api/tracks/pointMetadata"
 
   constructor(private http: HttpClient, private idbService: IdbcacheService) { }
 
@@ -51,6 +52,18 @@ export class TrackService {
         return value
       }
     }) as SegmentMetadata[]
+  }
+
+  async getPointMetadata(trackId: string): Promise<PointMetadata[]> {
+    const tracksString = await fetch(this.pointMetadataUrl+ "/" + trackId )
+    const text = await tracksString.text()
+    return JSON.parse(text, (key, value) => {
+      if (key === "eta" || key === "etfa" || key === "timestamp" || key === "startTimestamp" || key === "endTimestamp") {
+        return Instant.parse(value);
+      } else {
+        return value;
+      }
+    }) as PointMetadata[]
   }
 
   async getTrackGeoJsonPromise(track: TrackNoPoints): Promise<Feature<GeoJSON.LineString>>{

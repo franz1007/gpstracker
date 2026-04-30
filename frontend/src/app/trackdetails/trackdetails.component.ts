@@ -21,16 +21,35 @@ export class TrackdetailsComponent {
     })
   }
 
-  dataSignal: WritableSignal<any> = signal(null)
+
+
   data = {};
   elevationData = {}
-  options = {
+  linearOptions = {
     scales: {
       x: {
         type: "linear"
       }
     }
   };
+  elevationOptions = {
+    scales: {
+      x: {
+        type: "linear",
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+
+        // grid line settings
+        grid: {
+          drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+      },
+
+    }
+  }
   private setTrack(trackId: string){
     this.trackService.getTrackNoPoints(trackId).then(track => {
       this.trackService.getSegmentMetadata(track.uuid).then(metadata => {
@@ -61,21 +80,38 @@ export class TrackdetailsComponent {
           }]
         }
       })
-      this.trackService.getTrackGeoJsonPromise(track).then(metadata => {
-        console.log(metadata)
-        const heights = metadata.geometry.coordinates.map((coord,index) => {
+      const distancePromise = this.trackService.getPointMetadata(track.uuid)
+      const geoJsonPromise = this.trackService.getTrackGeoJsonPromise(track)
+      Promise.all([distancePromise, geoJsonPromise]).then(result => {
+        const pointMedatada = result[0]
+        const heights = result[1].geometry.coordinates.map((coord, index) => {
           return {
-            x: index,
+            x: pointMedatada[index].distance,
             y: coord[2]
           }
         })
+        const speeds = pointMedatada.filter(metadata => metadata.speed > 0).map(metadata => {
+          return {
+            x: metadata.distance,
+            y: metadata.speed * 3.6,
+          }
+        })
+        console.log(heights)
         this.elevationData = {
           datasets: [
           {
             label: 'Elevation',
             data: heights,
             fill: false,
-            tension: 0.4
+            tension: 0.4,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Speed',
+            data: speeds,
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y1',
           }]
         }
       })

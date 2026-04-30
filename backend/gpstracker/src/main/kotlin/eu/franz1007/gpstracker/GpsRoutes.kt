@@ -141,8 +141,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                         call.respond(track)
                     }
                 }
-
-                get("/pointMetadata/{trackId]") {
+                get("/pointMetadata/{trackId}") {
                     val trackId = call.parameters.getOrFail("trackId").let { uuidString ->
                         runCatching {
                             Uuid.parse(uuidString)
@@ -153,7 +152,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     }
 
                     val track = gpsPointService.getPointDistances(trackId)
-
+                    println(track)
                     if (track == null) {
                         call.respond(HttpStatusCode.NotFound, "Track $trackId does not exist")
                     } else {
