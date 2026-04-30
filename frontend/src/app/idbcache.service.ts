@@ -93,7 +93,10 @@ export class IdbcacheService {
 
   async initDB() {
     return await openDB<MyDB>('my-db', 4, {
-      upgrade(db) {
+      upgrade(db, oldVersion, newVersion, transaction, event) {
+        if(oldVersion !== newVersion){
+          if(oldVersion === 3) db.deleteObjectStore("features")
+        }
         db.createObjectStore("features")
         db.createObjectStore("metadata")
       },
