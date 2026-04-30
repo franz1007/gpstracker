@@ -1,5 +1,4 @@
-<p-table [value]="tracks" [tableStyle]="{ 'min-width': '50rem', 'min-height': '20rem'}" [paginator]="true" [rows]="16"
-    [rowsPerPageOptions]="[4, 8, 16, 24, 36]" [globalFilterFields]="['category']">
+<p-table [value]="tracks" [globalFilterFields]="['category']" [scrollable]="true" scrollHeight="90dvh">
     <ng-template #header>
         <tr>
             <th>StartTimestamp</th>
