@@ -4,6 +4,8 @@ import { TrackService } from '../services/track.service';
 import { TrackMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
 import { firstValueFrom } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { Chart, plugins } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
 @Component({
   selector: 'app-trackdetails',
@@ -15,13 +17,24 @@ export class TrackdetailsComponent {
 
   trackId : InputSignal<string> = input.required<string>();
   constructor(private trackService: TrackService) {
+    Chart.register(zoomPlugin)
     effect(() => {
       const id = this.trackId()
       this.setTrack(id)
     })
   }
 
-
+  private zoomOptions = {
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'x',
+        }
+      }
 
   data = {};
   elevationData = {}
@@ -30,6 +43,9 @@ export class TrackdetailsComponent {
       x: {
         type: "linear"
       }
+    },
+    plugins: {
+      zoom: this.zoomOptions
     }
   };
   elevationOptions = {
@@ -48,6 +64,9 @@ export class TrackdetailsComponent {
         },
       },
 
+    },
+    plugins: {
+      zoom: this.zoomOptions
     }
   }
   private setTrack(trackId: string){
