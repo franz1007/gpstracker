@@ -4,120 +4,160 @@ import { TrackMetadata } from './tracker/map/trackNoPoints';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { Instant } from '@js-joda/core';
 
-
-
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class IdbcacheService {
-  constructor() {
-  }
+  constructor() {}
 
   //TODO better type
   public async getTrackFeature(id: string): Promise<{
-    feature: Feature<GeoJSON.LineString> | null,
+    feature: Feature<GeoJSON.LineString> | null;
     startTimestampMillis: number | null;
-    endTimestampMillis: number | null
+    endTimestampMillis: number | null;
   }> {
-    const db = await this.initDB()
-    return db.get("features", id).then((value) => {
-      if (value !== undefined) {
-        console.log("Retreived feature for Track " + id + " from indexeddb")
-        return { feature: value.feature, startTimestampMillis: value.startTimestamp, endTimestampMillis: value.endTimestamp }
-      }
-      else {
-        return { feature: null, startTimestampMillis: null, endTimestampMillis: null }
-      }
-    }).catch(() => {
-      console.log("error getting " + id + "from idb")
-      return { feature: null, startTimestampMillis: null, endTimestampMillis: null }
-    })
+    const db = await this.initDB();
+    return db
+      .get('features', id)
+      .then((value) => {
+        if (value !== undefined) {
+          console.log('Retreived feature for Track ' + id + ' from indexeddb');
+          return {
+            feature: value.feature,
+            startTimestampMillis: value.startTimestamp,
+            endTimestampMillis: value.endTimestamp,
+          };
+        } else {
+          return {
+            feature: null,
+            startTimestampMillis: null,
+            endTimestampMillis: null,
+          };
+        }
+      })
+      .catch(() => {
+        console.log('error getting ' + id + 'from idb');
+        return {
+          feature: null,
+          startTimestampMillis: null,
+          endTimestampMillis: null,
+        };
+      });
   }
 
   public async getMetadata(id: string): Promise<TrackMetadata | null> {
-    const db = await this.initDB()
-    return db.get("metadata", id).then((value) => {
-      if (value !== undefined) {
-        console.log("Successfully retreived metadata for Track " + id + " from indexeddb")
-        return value.metadata
-      }
-      return null
-    }).catch(() => {
-      console.log("error getting " + id + "from idb")
-      return null
-    })
+    const db = await this.initDB();
+    return db
+      .get('metadata', id)
+      .then((value) => {
+        if (value !== undefined) {
+          console.log(
+            'Successfully retreived metadata for Track ' +
+              id +
+              ' from indexeddb',
+          );
+          return value.metadata;
+        }
+        return null;
+      })
+      .catch(() => {
+        console.log('error getting ' + id + 'from idb');
+        return null;
+      });
   }
 
-
-
-  public storeFeature(id: string, feature: Feature<GeoJSON.LineString>, startTimestamp: Instant, endTimestamp: Instant) {
-    this.initDB().then(db => {
-      db.put("features", { feature: feature, startTimestamp: startTimestamp.toEpochMilli(), endTimestamp: endTimestamp.toEpochMilli() }, id)
-      const transaction = db.transaction("features", "readwrite")
-    })
+  public storeFeature(
+    id: string,
+    feature: Feature<GeoJSON.LineString>,
+    startTimestamp: Instant,
+    endTimestamp: Instant,
+  ) {
+    this.initDB().then((db) => {
+      db.put(
+        'features',
+        {
+          feature: feature,
+          startTimestamp: startTimestamp.toEpochMilli(),
+          endTimestamp: endTimestamp.toEpochMilli(),
+        },
+        id,
+      );
+      const transaction = db.transaction('features', 'readwrite');
+    });
   }
 
   public storeMetadata(id: string, metadata: TrackMetadata) {
-    this.initDB().then(db => {
-      db.put("metadata", { metadata: metadata }, id)
-    })
+    this.initDB().then((db) => {
+      db.put('metadata', { metadata: metadata }, id);
+    });
   }
 
-
   public updateCategory(oldId: string, newId: string, newCategory: string) {
-    this.initDB().then(db => {
-      this.getMetadata(oldId).then(metadata => {
+    this.initDB().then((db) => {
+      this.getMetadata(oldId).then((metadata) => {
         if (metadata != null) {
-          metadata.uuid = newId
-          metadata.category = newCategory
-          db.put("metadata", { metadata: metadata }, newId).catch(reason => {
-            console.log("put metadata to db in updateCategory failed")
-          })
-          db.delete("metadata", oldId).catch(reason => {
-            console.log("delete metadata from db failed")
-          })
+          metadata.uuid = newId;
+          metadata.category = newCategory;
+          db.put('metadata', { metadata: metadata }, newId).catch((reason) => {
+            console.log('put metadata to db in updateCategory failed');
+          });
+          db.delete('metadata', oldId).catch((reason) => {
+            console.log('delete metadata from db failed');
+          });
         }
-      })
-      this.getTrackFeature(oldId).then(data => {
-        if (data.feature != null && data.endTimestampMillis != null && data.startTimestampMillis != null) {
-          db.put("features", { feature: data.feature, startTimestamp: data.startTimestampMillis, endTimestamp: data.endTimestampMillis }, newId).catch(reason => {
-            console.log("put feature to db in updateCategory failed")
-          })
-          db.delete("features", oldId).catch(reason => {
-            console.log("delete feature from db failed")
-          })
+      });
+      this.getTrackFeature(oldId).then((data) => {
+        if (
+          data.feature != null &&
+          data.endTimestampMillis != null &&
+          data.startTimestampMillis != null
+        ) {
+          db.put(
+            'features',
+            {
+              feature: data.feature,
+              startTimestamp: data.startTimestampMillis,
+              endTimestamp: data.endTimestampMillis,
+            },
+            newId,
+          ).catch((reason) => {
+            console.log('put feature to db in updateCategory failed');
+          });
+          db.delete('features', oldId).catch((reason) => {
+            console.log('delete feature from db failed');
+          });
         }
-      })
-    })
+      });
+    });
   }
 
   async initDB() {
-    return await openDB<MyDB>('my-db', 4, {
+    return await openDB<MyDB>('my-db', 5, {
       upgrade(db, oldVersion, newVersion, transaction, event) {
-        if(oldVersion !== newVersion){
-          if(oldVersion === 3) db.deleteObjectStore("features")
+        if (oldVersion !== newVersion) {
+          if (oldVersion === 3 || oldVersion === 4)
+            db.deleteObjectStore('features');
         }
-        db.createObjectStore("features")
-        db.createObjectStore("metadata")
+        db.createObjectStore('features');
+        db.createObjectStore('metadata');
       },
     });
   }
 }
 
-
 interface MyDB extends DBSchema {
   features: {
-    key: string,
+    key: string;
     value: {
-      feature: Feature<GeoJSON.LineString>,
-      startTimestamp: number,
-      endTimestamp: number
+      feature: Feature<GeoJSON.LineString>;
+      startTimestamp: number;
+      endTimestamp: number;
     };
   };
   metadata: {
-    key: string,
+    key: string;
     value: {
-      metadata: TrackMetadata
+      metadata: TrackMetadata;
     };
   };
 }
