@@ -21,14 +21,23 @@ import kotlin.uuid.Uuid
 @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 class GpsPointService(database: Database) {
 
+    object TrackGroups : Table() {
+        val id = long("id").autoIncrement()
+        val uuid = uuid("uuid").index().autoGenerate()
+        val name = text("name")
+        override val primaryKey = PrimaryKey(id)
+    }
+
     object Tracks : Table() {
         val id = long("id").autoIncrement()
         val uuid = uuid("uuid").index().autoGenerate()
         val startTimestamp = timestamp("startTimestamp")
         val endTimestamp = timestamp("endTimestamp")
         val category = enumeration<TrackCategory>("category")
+        val groupId = optReference("groupId", TrackGroups.id)
         override val primaryKey = PrimaryKey(id)
     }
+
 
     object GpsPoints : Table() {
         val id = long("id").autoIncrement()
@@ -82,6 +91,14 @@ class GpsPointService(database: Database) {
         }
     }
 
+    suspend fun getTrackGroupForId(groupId: Long?): TrackGroup? = dbQuery {
+        groupId?.let {
+            TrackGroups.selectAll().where { TrackGroups.id eq groupId }.single().let {
+                TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+            }
+        }
+    }
+
     suspend fun categorizeTrack(trackId: Uuid, newCategory: TrackCategory): TrackNoPoints? {
         return dbQuery {
             return@dbQuery Tracks.updateReturning(where = { Tracks.uuid eq trackId }) {
@@ -89,11 +106,16 @@ class GpsPointService(database: Database) {
                 it[category] = newCategory
             }.map {
                 TrackNoPoints(
-                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                    it[Tracks.uuid],
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category],
+                    getTrackGroupForId(it[Tracks.groupId])
                 )
             }.singleOrNull()
         }
     }
+
 
     suspend fun importTrack(track: TrackNoId): Long {
         return dbQuery {
@@ -122,9 +144,13 @@ class GpsPointService(database: Database) {
 
     suspend fun readAllTracksWithoutPoints(): List<TrackNoPoints> {
         return dbQuery {
-            Tracks.selectAll().map {
+            Tracks.leftJoin(TrackGroups).selectAll().map {
                 TrackNoPoints(
-                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                    it[Tracks.uuid],
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category],
+                    it[Tracks.groupId]?.let { _ -> TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name]) }
                 )
             }
         }
@@ -132,9 +158,15 @@ class GpsPointService(database: Database) {
 
     suspend fun readLatestTrackNoPoints(): TrackNoPoints? {
         return dbQuery {
-            Tracks.selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
+            Tracks.leftJoin(TrackGroups).selectAll().orderBy(Tracks.endTimestamp, SortOrder.DESC).limit(1).map {
                 TrackNoPoints(
-                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                    it[Tracks.uuid],
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category],
+                    it[Tracks.groupId]?.let { _ ->
+                        TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+                    }
                 )
             }.singleOrNull()
         }
@@ -142,9 +174,15 @@ class GpsPointService(database: Database) {
 
     suspend fun readTrackNoPoints(uuid: Uuid): TrackNoPoints? {
         return dbQuery {
-            Tracks.selectAll().where { Tracks.uuid eq uuid }.limit(1).map {
+            Tracks.leftJoin(TrackGroups).selectAll().where { Tracks.uuid eq uuid }.limit(1).map {
                 TrackNoPoints(
-                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category]
+                    it[Tracks.uuid],
+                    it[Tracks.startTimestamp],
+                    it[Tracks.endTimestamp],
+                    it[Tracks.category],
+                    it[Tracks.groupId]?.let { _ ->
+                        TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+                    }
                 )
             }.singleOrNull()
         }
@@ -164,6 +202,7 @@ class GpsPointService(database: Database) {
             Tracks.category,
             Tracks.startTimestamp,
             Tracks.endTimestamp,
+            Tracks.groupId,
             subquery[line].ST_Force2D().toGeography().ST_Length()
         ).where { Tracks.uuid eq uuid }.singleOrNull()?.let {
             val distanceMeters = it[subquery[line].ST_Force2D().toGeography().ST_Length()]
@@ -179,7 +218,8 @@ class GpsPointService(database: Database) {
                 endTimestamp = endTimestamp,
                 distanceMeters = distanceMeters.toInt(),
                 averageSpeedKph = averageSpeedKph,
-                category = trackCategory
+                category = trackCategory,
+                group = getTrackGroupForId(it[Tracks.groupId])
             )
 
         }

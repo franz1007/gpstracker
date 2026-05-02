@@ -22,6 +22,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.time.*
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -207,35 +208,35 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     call.respond(TrackCategory.entries.toTypedArray())
                 }
             }
-        }
-        webSocket("/ws") {
-            println("Adding user!")
-            connections += this
-            println(connections)
-            try {
-                for (frame in incoming) {
-                    println(frame)
-                }
-            } catch (e: Exception) {
-                println(e.localizedMessage)
-            } finally {
-                println("Removing $this!")
-                connections -= this
-            }
-        }
-        sse("/sse") {
-            println("Adding sse connection")
-            sseConnections += this
-            while (true) {
-                try {
-                    send(ServerSentEvent("ping", "ping", null, 1_000, null))
-                } catch (e: IOException) {
-                    sseConnections.remove(this)
-                }
-                delay(10000)
-            }
-        }
 
+            webSocket("/ws") {
+                println("Adding user!")
+                connections += this
+                println(connections)
+                try {
+                    for (frame in incoming) {
+                        println(frame)
+                    }
+                } catch (e: Exception) {
+                    println(e.localizedMessage)
+                } finally {
+                    println("Removing $this!")
+                    connections -= this
+                }
+            }
+            sse("/sse") {
+                println("Adding sse connection")
+                sseConnections += this
+                while (true) {
+                    try {
+                        send(ServerSentEvent("ping", "ping", null, 1_000, null))
+                    } catch (e: IOException) {
+                        sseConnections.remove(this)
+                    }
+                    delay(10000.milliseconds)
+                }
+            }
+        }
     }
 
     launch {

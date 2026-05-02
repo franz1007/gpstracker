@@ -33,7 +33,7 @@ fun main() {
 fun generateMigrationScript() {
     File(MIGRATIONS_DIRECTORY).mkdirs()
     val migrationFile = MigrationUtils.generateMigrationScript(
-        GpsPointService.Tracks, GpsPointService.GpsPoints,
+        GpsPointService.Tracks, GpsPointService.GpsPoints, GpsPointService.TrackGroups,
         scriptDirectory = MIGRATIONS_DIRECTORY,
         scriptName = getNextMigrationName(Path(MIGRATIONS_DIRECTORY)),
     )

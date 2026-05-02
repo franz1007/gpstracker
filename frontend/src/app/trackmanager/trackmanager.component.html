@@ -1,4 +1,4 @@
-<p-table [value]="tracks" [globalFilterFields]="['category']" [scrollable]="true" scrollHeight="90dvh">
+<p-table [value]="tracks" [globalFilterFields]="['category']" [scrollable]="true" scrollHeight="90dvh" rowGroupMode="subheader" groupRowsBy="group.uuid">
     <ng-template #header>
         <tr>
             <th>StartTimestamp</th>
@@ -27,7 +27,30 @@
             <th></th>
         </tr>
     </ng-template>
-    <ng-template #body let-track>
+    <ng-template #groupheader let-track let-rowIndex="rowIndex" let-expanded="expanded">
+        <tr>
+            <td colspan="7">
+                <button
+                        type="button"
+                        pButton
+                        pRipple
+                        [pRowToggler]="track"
+                        text
+                        rounded
+                        plain
+                        class="mr-2"
+                        [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
+                </button>
+                <span class="font-bold ml-2">{{track.group?.name ?? "No Group"}}</span>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template #groupfooter let-track>
+        <tr class="p-rowgroup-footer">
+            <td colspan="7" style="text-align: right">Total Tracks</td>
+        </tr>
+    </ng-template>
+    <ng-template #expandedrow let-track>
         <tr>
             <td>{{ track.startTimestampString }}</td>
             <td>{{ track.durationString }}</td>
