@@ -1,0 +1,15 @@
+app-map {
+  height: 100%;
+  width: 100%;
+}
+
+.container {
+  flex-direction: column;
+  display: flex;
+}
+#map {
+  height: 34dvh;
+  width: 100%;
+  margin-top: auto;
+  position: relative;
+}

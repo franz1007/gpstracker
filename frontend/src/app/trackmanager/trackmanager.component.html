@@ -8,6 +8,7 @@
             <th>Category</th>
             <th>Show on map</th>
             <th>Details</th>
+            <th>Edit</th>
         </tr>
         <tr>
             <th></th>
@@ -25,11 +26,12 @@
             </th>
             <th></th>
             <th></th>
+            <th></th>
         </tr>
     </ng-template>
     <ng-template #groupheader let-track let-rowIndex="rowIndex" let-expanded="expanded">
         <tr>
-            <td colspan="7">
+            <td colspan="8">
                 <button
                         type="button"
                         pButton
@@ -47,7 +49,7 @@
     </ng-template>
     <ng-template #groupfooter let-track>
         <tr class="p-rowgroup-footer">
-            <td colspan="7" style="text-align: right">Total Tracks</td>
+            <td colspan="8" style="text-align: right">Total Tracks</td>
         </tr>
     </ng-template>
     <ng-template #expandedrow let-track>
@@ -68,6 +70,11 @@
             <td>
                 <a [routerLink]="['/details', track.uuid]">
                 <span class="pi pi-chart-line"></span>
+                </a>
+            </td>
+            <td>
+                <a [routerLink]="['/edit', track.uuid]">
+                <span class="pi pi-pencil"></span>
                 </a>
             </td>
         </tr>

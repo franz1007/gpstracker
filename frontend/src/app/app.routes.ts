@@ -1,8 +1,8 @@
-import {Routes} from '@angular/router';
+import { Routes } from '@angular/router';
 import { TrackerComponent } from './tracker/tracker.component';
 import { TrackmanagerComponent } from './trackmanager/trackmanager.component';
 import { TrackdetailsComponent } from './trackdetails/trackdetails.component';
-
+import { TrackeditorComponent } from './trackeditor/trackeditor.component';
 
 export const routes: Routes = [
   {
@@ -18,7 +18,7 @@ export const routes: Routes = [
   {
     path: 'trackmanager',
     title: 'Trackmanager',
-    component: TrackmanagerComponent
+    component: TrackmanagerComponent,
   },
   {
     path: 'details',
@@ -31,7 +31,12 @@ export const routes: Routes = [
     component: TrackdetailsComponent,
   },
   {
+    path: 'edit/:trackId',
+    title: 'Trackeditor',
+    component: TrackeditorComponent,
+  },
+  {
     path: '**',
     redirectTo: '/map',
-  }
+  },
 ];
