@@ -5,6 +5,6 @@
     </aside>
     <div class="main-body">
         <p-button [ngClass]="{'expanding': isExpanding}" id="overlaybutton" (onClick)="toggleSideBar()" icon="pi pi-bars" />
-        <app-map id="map" [(showTrackMode)]="mapTrackMode"></app-map>
+        <app-map id="map" [(showTrackMode)]="mapTrackMode" zoomKey="tracker"></app-map>
     </div>
 </section>

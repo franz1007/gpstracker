@@ -1,4 +1,17 @@
-import { Component, AfterViewInit, Signal, signal, input, Input, InputSignal, effect, model, ModelSignal, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  Signal,
+  signal,
+  input,
+  Input,
+  InputSignal,
+  effect,
+  model,
+  ModelSignal,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import * as L from 'leaflet';
 import { TrackService } from '../../services/track.service';
 import { SsePointService } from '../../services/ssePoint.service';
@@ -8,112 +21,142 @@ import { Feature, LineString, Position } from 'geojson';
 import { DateTimeFormatter, Instant, ZoneId } from '@js-joda/core';
 import { RouterLink } from '@angular/router';
 
-
 @Component({
   selector: 'app-map',
   imports: [],
   templateUrl: './map.component.html',
-  styleUrl: './map.component.css'
+  styleUrl: './map.component.css',
 })
-
 export class MapComponent implements OnDestroy, OnInit {
-  showTrackMode: ModelSignal<string | TrackNoPoints[] | null> = model.required<string | TrackNoPoints[] | null>();
+  showTrackMode: ModelSignal<string | TrackNoPoints[] | null> = model.required<
+    string | TrackNoPoints[] | null
+  >();
+  // Site-specific key for zoom LocalStorage
+  zoomKey: InputSignal<string> = input.required<string>();
 
-  private map!: L.Map
-  private tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 20,
-    minZoom: 3,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  });
-  private lines: Map<string, L.GeoJSON> = new Map<string, L.GeoJSON>()
+  private map!: L.Map;
+  private tiles = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      maxZoom: 20,
+      minZoom: 3,
+      attribution:
+        '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    },
+  );
+  private lines: Map<string, L.GeoJSON> = new Map<string, L.GeoJSON>();
   private lineStyle = {
-    color: "red",
+    color: 'red',
   };
-  private latestLine: L.GeoJSON = L.geoJSON(null, { style: this.lineStyle })
+  private latestLine: L.GeoJSON = L.geoJSON(null, { style: this.lineStyle });
 
-  private latestJson: Feature<GeoJSON.LineString> = L.geoJSON() as unknown as Feature<LineString>
+  private latestJson: Feature<GeoJSON.LineString> =
+    L.geoJSON() as unknown as Feature<LineString>;
 
-  private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1))
+  private marker: L.CircleMarker = L.circleMarker(new L.LatLng(1, 1));
 
-  private pointsSubscription: Subscription | null = null
+  private pointsSubscription: Subscription | null = null;
 
-  constructor(private trackService: TrackService, private sseService: SsePointService) {
+  constructor(
+    private trackService: TrackService,
+    private sseService: SsePointService,
+  ) {
     effect(() => {
-      const mode = this.showTrackMode()
+      const mode = this.showTrackMode();
       console.log(`showTrackMode changed: ${mode}`);
-      if (typeof (mode) === "string") {
-        if (mode === "latest") {
-          this.subscribeLatestTrack()
+      if (typeof mode === 'string') {
+        if (mode === 'latest') {
+          this.subscribeLatestTrack();
+        } else {
+          console.log('Invalid value for showTrackMode');
+          console.log(mode);
         }
-        else {
-          console.log("Invalid value for showTrackMode")
-          console.log(mode)
-        }
-      }
-      else {
+      } else {
         if (mode === null) {
-          this.showNoTrack()
-        }
-        else {
-          this.showTracks(mode)
+          this.showNoTrack();
+        } else {
+          this.showTracks(mode);
         }
       }
     });
   }
   getNumberFromLocalStorage(name: string, defaulValue: number): number {
-    const numberFromStorage = Number(localStorage.getItem(name))
-    return Number.isNaN(numberFromStorage) ? defaulValue : numberFromStorage
+    const numberFromStorage = Number(localStorage.getItem(name));
+    return Number.isNaN(numberFromStorage) ? defaulValue : numberFromStorage;
   }
 
   ngOnInit() {
-    const storedZoom = this.getNumberFromLocalStorage("mapZoom", 7)
-    const storedLat = this.getNumberFromLocalStorage("mapLat", 49.65254208294224)
-    const storedLon = this.getNumberFromLocalStorage("mapLon", 10.635266687654777)
-    console.log("reload " + storedLat + " " + storedLon)
+    const storedZoom = this.getNumberFromLocalStorage(
+      'mapZoom' + this.zoomKey(),
+      7,
+    );
+    const storedLat = this.getNumberFromLocalStorage(
+      'mapLat' + this.zoomKey(),
+      49.65254208294224,
+    );
+    const storedLon = this.getNumberFromLocalStorage(
+      'mapLon' + this.zoomKey(),
+      10.635266687654777,
+    );
+    console.log('reload ' + storedLat + ' ' + storedLon);
     this.map = L.map('map', {
       center: [storedLat, storedLon],
       zoom: storedZoom,
       zoomControl: false,
     });
-    this.map.on("zoomend", ev => {
-      const zoom = this.map.getZoom()
-      localStorage.setItem("mapZoom", zoom.toString())
-    })
-    this.map.on("moveend", ev => {
-      const center = this.map.getCenter()
-      console.log("moveend" + center)
-      localStorage.setItem("mapLat", center.lat.toString())
-      localStorage.setItem("mapLon", center.lng.toString())
-    })
-    L.control.zoom({ position: 'topright' }).addTo(this.map)
-    const control = L.control.layers(undefined, undefined, {
-      collapsed: true
-    }).addTo(this.map);
-    const OpenTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-      opacity: 0.90
+    this.map.on('zoomend', (ev) => {
+      const zoom = this.map.getZoom();
+      localStorage.setItem('mapZoom' + this.zoomKey(), zoom.toString());
     });
-    const HikingTrails = L.tileLayer('https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png', {
-      id: 'hiking',
-      attribution: '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+    this.map.on('moveend', (ev) => {
+      const center = this.map.getCenter();
+      console.log('moveend' + center);
+      localStorage.setItem('mapLat' + this.zoomKey(), center.lat.toString());
+      localStorage.setItem('mapLon' + this.zoomKey(), center.lng.toString());
     });
-    const CyclingTrails = L.tileLayer('https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png', {
-      id: 'cycling',
-      attribution: '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-    });
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
+    const control = L.control
+      .layers(undefined, undefined, {
+        collapsed: true,
+      })
+      .addTo(this.map);
+    const OpenTopoMap = L.tileLayer(
+      'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      {
+        maxZoom: 17,
+        attribution:
+          'Map data: &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+        opacity: 0.9,
+      },
+    );
+    const HikingTrails = L.tileLayer(
+      'https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png',
+      {
+        id: 'hiking',
+        attribution:
+          '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+      },
+    );
+    const CyclingTrails = L.tileLayer(
+      'https://tile.waymarkedtrails.org/{id}/{z}/{x}/{y}.png',
+      {
+        id: 'cycling',
+        attribution:
+          '&copy; <a href="http://waymarkedtrails.org">Sarah Hoffmann</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+      },
+    );
     //const contoursDe = L.tileLayer('https://sgx.geodatenzentrum.de/gdz_basemapde_vektor/tiles/v1/bm_web_de_3857/{z}/{x}/{y}.pbf')
-    control.addBaseLayer(this.tiles, "OpenStreetMap")
-    control.addBaseLayer(OpenTopoMap, "OpenTopoMap");
-    control.addOverlay(HikingTrails, "Hiking Routes");
-    control.addOverlay(CyclingTrails, "Cycling Routes");
+    control.addBaseLayer(this.tiles, 'OpenStreetMap');
+    control.addBaseLayer(OpenTopoMap, 'OpenTopoMap');
+    control.addOverlay(HikingTrails, 'Hiking Routes');
+    control.addOverlay(CyclingTrails, 'Cycling Routes');
 
     //control.addOverlay(contoursDe, "Contours Germany")
-    this.tiles.addTo(this.map)
-    this.lines.forEach(line => {
-      line.removeFrom(this.map)
-    })
-    this.marker.addTo(this.map)
+    this.tiles.addTo(this.map);
+    this.lines.forEach((line) => {
+      line.removeFrom(this.map);
+    });
+    this.marker.addTo(this.map);
   }
 
   ngOnDestroy() {
@@ -123,86 +166,110 @@ export class MapComponent implements OnDestroy, OnInit {
     }
   }
 
-
-
   subscribeLatestTrack() {
-    this.showNoTrack()
-    this.trackService.getLatestTrackJson().then(lineString => {
-      this.latestJson = lineString
-      this.latestLine.addData(this.latestJson)
-      if (!this.map.hasLayer(this.latestLine)) {
-        this.latestLine.addTo(this.map)
-      }
-      this.map.flyToBounds(this.latestLine.getBounds(), { maxZoom: this.map.getZoom() + 2 })
-      const position: Position = lineString.geometry.coordinates[lineString.geometry.coordinates.length - 1]
-      this.marker.setLatLng([position[1], position[0]])
-      this.marker.setRadius(20)
-      if (!this.map.hasLayer(this.marker)) {
-        this.marker.addTo(this.map)
-      }
-
-    }).finally(() => {
-      this.pointsSubscription = this.sseService.createEventSource().subscribe(data => {
-        this.latestJson.geometry.coordinates.push([data.lon, data.lat, data.altitude])
-        this.latestLine.clearLayers()
-        this.latestLine.addData(this.latestJson)
-        this.marker.setLatLng([data.lat, data.lon])
-
+    this.showNoTrack();
+    this.trackService
+      .getLatestTrackJson()
+      .then((lineString) => {
+        this.latestJson = lineString;
+        this.latestLine.addData(this.latestJson);
+        if (!this.map.hasLayer(this.latestLine)) {
+          this.latestLine.addTo(this.map);
+        }
+        this.map.flyToBounds(this.latestLine.getBounds(), {
+          maxZoom: this.map.getZoom() + 2,
+        });
+        const position: Position =
+          lineString.geometry.coordinates[
+            lineString.geometry.coordinates.length - 1
+          ];
+        this.marker.setLatLng([position[1], position[0]]);
+        this.marker.setRadius(20);
+        if (!this.map.hasLayer(this.marker)) {
+          this.marker.addTo(this.map);
+        }
       })
-    })
+      .finally(() => {
+        this.pointsSubscription = this.sseService
+          .createEventSource()
+          .subscribe((data) => {
+            this.latestJson.geometry.coordinates.push([
+              data.lon,
+              data.lat,
+              data.altitude,
+            ]);
+            this.latestLine.clearLayers();
+            this.latestLine.addData(this.latestJson);
+            this.marker.setLatLng([data.lat, data.lon]);
+          });
+      });
   }
 
   showTracks(tracks: TrackNoPoints[]) {
-    this.showNoTrack()
+    this.showNoTrack();
     if (this.pointsSubscription != null) {
-      this.pointsSubscription.unsubscribe()
+      this.pointsSubscription.unsubscribe();
     }
-    const result = tracks.map(track => {
-      const line = this.lines.get(track.uuid)
+    const result = tracks.map((track) => {
+      const line = this.lines.get(track.uuid);
       if (line === undefined) {
-        const line = L.geoJSON(null,
-          {
-            style: this.lineStyle,
-            onEachFeature: (feature: Feature, layer: L.Layer) => {
-              if (feature.properties !== null) {
-                const popup = document.createElement("div")
-                const timestampParagraph = document.createElement("p")
-                timestampParagraph.innerText = "Timestamp: " + Instant.parse(feature.properties["startTimestamp"]).atZone(ZoneId.SYSTEM).format(DateTimeFormatter.ofPattern('yyyy-MM-dd HH:mm'))
-                const distanceParagraph = document.createElement("p")
-                distanceParagraph.innerText = "Distance (meters): " + feature.properties["distanceMeters"]
-                const detailsLink = document.createElement("a")
-                detailsLink.href = "/details/" + feature.properties["uuid"]
-                detailsLink.innerHTML = "Details"
-                popup.appendChild(timestampParagraph)
-                popup.appendChild(distanceParagraph)
-                popup.appendChild(detailsLink)
-                layer.bindPopup(popup)
-              }
+        const line = L.geoJSON(null, {
+          style: this.lineStyle,
+          onEachFeature: (feature: Feature, layer: L.Layer) => {
+            if (feature.properties !== null) {
+              const popup = document.createElement('div');
+              const timestampParagraph = document.createElement('p');
+              timestampParagraph.innerText =
+                'Timestamp: ' +
+                Instant.parse(feature.properties['startTimestamp'])
+                  .atZone(ZoneId.SYSTEM)
+                  .format(DateTimeFormatter.ofPattern('yyyy-MM-dd HH:mm'));
+              const distanceParagraph = document.createElement('p');
+              distanceParagraph.innerText =
+                'Distance (meters): ' + feature.properties['distanceMeters'];
+              const detailsLink = document.createElement('a');
+              detailsLink.href = '/details/' + feature.properties['uuid'];
+              detailsLink.innerHTML = 'Details';
+              popup.appendChild(timestampParagraph);
+              popup.appendChild(distanceParagraph);
+              popup.appendChild(detailsLink);
+              layer.bindPopup(popup);
             }
-          })
-        this.lines.set(track.uuid, line)
-        return firstValueFrom(this.trackService.getTrackGeoJson(track)).then(lineString => {
-          return line.addData(lineString)
-        })
-      }
-      else return line
-    })
-    const featureGroup = L.featureGroup(result.filter(value => value instanceof L.GeoJSON))
-    featureGroup.addTo(this.map)
-    const promises = result.filter(value => value instanceof Promise)
-    const resolved = promises.map(promise =>
-      promise.then(geoJson => featureGroup.addLayer(geoJson))
-    )
-    if (promises.length === 0) this.map.flyToBounds(featureGroup.getBounds(), { maxZoom: this.map.getZoom() + 2 })
-    else Promise.allSettled(resolved).then(_ => this.map.flyToBounds(featureGroup.getBounds(), { maxZoom: this.map.getZoom() + 2 }))
+          },
+        });
+        this.lines.set(track.uuid, line);
+        return firstValueFrom(this.trackService.getTrackGeoJson(track)).then(
+          (lineString) => {
+            return line.addData(lineString);
+          },
+        );
+      } else return line;
+    });
+    const featureGroup = L.featureGroup(
+      result.filter((value) => value instanceof L.GeoJSON),
+    );
+    featureGroup.addTo(this.map);
+    const promises = result.filter((value) => value instanceof Promise);
+    const resolved = promises.map((promise) =>
+      promise.then((geoJson) => featureGroup.addLayer(geoJson)),
+    );
+    if (promises.length === 0)
+      this.map.flyToBounds(featureGroup.getBounds(), {
+        maxZoom: this.map.getZoom() + 2,
+      });
+    else
+      Promise.allSettled(resolved).then((_) =>
+        this.map.flyToBounds(featureGroup.getBounds(), {
+          maxZoom: this.map.getZoom() + 2,
+        }),
+      );
   }
 
   showNoTrack() {
-    this.lines.forEach(line => {
-      line.removeFrom(this.map)
-    })
-    this.latestLine.removeFrom(this.map)
-    this.marker.removeFrom(this.map)
+    this.lines.forEach((line) => {
+      line.removeFrom(this.map);
+    });
+    this.latestLine.removeFrom(this.map);
+    this.marker.removeFrom(this.map);
   }
-
 }
