@@ -1,10 +1,20 @@
 <div class="container">
-<div style="width: 100%;">
-<p-select [options]="categories" appendTo="body" [ngModel]="track.value()?.category" (onChange)="onCategoryChange($event.value)" />
-</div>
-<div>
-  <label for="group">Group</label>
-  <input type="text">{{ track.value()?.group }}
-</div>
+  <div>
+    <label>
+      Category
+    </label>
+    <p-select [options]="categories" appendTo="body" [ngModel]="track.value()?.category" (onChange)="onCategoryChange($event.value)" />
+  </div>
+  <div>
+    <label>
+      Group
+    </label>
+    <p-select [options]="groupNames()" appendTo="body" [ngModel]="track.value()?.group" (onChange)="onGroupChange($event.value)" />
+  </div>
+  <div>
+    <label for="new-group" style="margin-right: 10px">Create Group</label>
+    <input id="new-group" type="text" pInputText [(ngModel)]="newGroupName" placeholder="New Group Name" style="margin-right: 10px;"/>
+    <p-button label="Create" severity="secondary" (onClick)="onGroupCreate()"/>
+  </div>
   <app-map id="map" [showTrackMode]="mapTrack()" zoomKey="editor"></app-map>
 </div>

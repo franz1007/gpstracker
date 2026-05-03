@@ -5,6 +5,7 @@ package eu.franz1007.gpstracker
 import eu.franz1007.gpstracker.database.GpsPointService
 import eu.franz1007.gpstracker.model.GpsPointNoId
 import eu.franz1007.gpstracker.model.TrackCategory
+import eu.franz1007.gpstracker.uitl.getUuidParam
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -198,6 +199,17 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     }
                 }
 
+                post("/updateGroup/{uuid}") {
+                    val trackId = getUuidParam("uuid")
+                    val newGroup = getUuidParam("newGroup")
+                    val changedTrack = gpsPointService.setGroup(trackUuid = trackId, groupUuid = newGroup)
+                    if (changedTrack == null) {
+                        call.respond(HttpStatusCode.BadRequest, "No track or group available with this uuid")
+                    } else {
+                        call.respond(changedTrack)
+                    }
+                }
+
                 get("/latest") {
                     call.respondNullable(gpsPointService.readLatestTrackNoPoints())
                 }
@@ -235,6 +247,17 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     }
                     delay(10000.milliseconds)
                 }
+            }
+            route("/groups") {
+                get {
+                    call.respond(gpsPointService.getAllGroups())
+                }
+                post {
+                    val name = call.parameters.getOrFail("name")
+                    val group = gpsPointService.createGroup(name)
+                    call.respond(group)
+                }
+
             }
         }
     }

@@ -6,18 +6,24 @@ import {
   model,
   ModelSignal,
   resource,
+  signal,
   Signal,
   WritableSignal,
 } from '@angular/core';
-import { TrackMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
+import {
+  TrackGroup,
+  TrackMetadata,
+  TrackNoPoints,
+} from '../tracker/map/trackNoPoints';
 import { TrackService } from '../services/track.service';
 import { MapComponent } from '../tracker/map/map.component';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-trackeditor',
-  imports: [MapComponent, SelectModule, FormsModule],
+  imports: [MapComponent, SelectModule, FormsModule, ButtonModule],
   templateUrl: './trackeditor.component.html',
   styleUrl: './trackeditor.component.css',
 })
@@ -34,6 +40,11 @@ export class TrackeditorComponent {
     },
   }).asReadonly();
 
+  groups: WritableSignal<Array<TrackGroup>> = signal([]);
+  groupNames: Signal<Array<String>> = linkedSignal(() => {
+    return this.groups().map((group) => group.name);
+  });
+
   mapTrack = linkedSignal(() => {
     const t = this.track.value();
     if (t) {
@@ -46,6 +57,9 @@ export class TrackeditorComponent {
   constructor(private trackService: TrackService) {
     trackService.getTrackCategories().then((result) => {
       this.categories = result;
+    });
+    trackService.getAllGroups().then((result) => {
+      this.groups.set(result);
     });
   }
 
@@ -74,6 +88,46 @@ export class TrackeditorComponent {
       }
     } else {
       console.error('error: Track not set, is required resource');
+    }
+  }
+  onGroupChange(value: string) {
+    console.log('category of track changed');
+    console.log(value);
+    const t = this.track.value();
+    if (t) {
+      if (this.categories.includes(value)) {
+        this.trackService.updateCategory(t.uuid, value).then((result) => {
+          if (result != null) {
+            this.trackId.set(result.uuid);
+            console.log('new category: ' + result.category);
+            history.replaceState(
+              null,
+              '',
+              new URL(result.uuid, window.location.href).href,
+            );
+          }
+        });
+      } else {
+        //TODO invalid values
+      }
+    } else {
+      console.error('error: Track not set, is required resource');
+    }
+  }
+
+  newGroupName: Signal<string> = signal('');
+  onGroupCreate() {
+    const newName = this.newGroupName();
+    if (
+      this.groups()
+        .map((group) => group.name)
+        .includes(newName)
+    ) {
+      alert('A group with this name already exists');
+    } else {
+      this.trackService.createGroup(newName).then((result) => {
+        this.groups.update((oldValue) => [result, ...oldValue]);
+      });
     }
   }
 }

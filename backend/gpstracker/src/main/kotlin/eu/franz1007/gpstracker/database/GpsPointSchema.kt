@@ -91,10 +91,46 @@ class GpsPointService(database: Database) {
         }
     }
 
-    suspend fun getTrackGroupForId(groupId: Long?): TrackGroup? = dbQuery {
+    suspend fun getAllGroups(): List<TrackGroup> = dbQuery {
+        TrackGroups.selectAll().map {
+            TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+        }
+    }
+
+    suspend fun createGroup(name: String): TrackGroup = dbQuery {
+        TrackGroups.insertReturning { it[TrackGroups.name] = name }.single().let {
+            TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+        }
+    }
+
+    suspend fun getGroup(uuid: Uuid): TrackGroup? = dbQuery {
+        TrackGroups.selectAll().where { TrackGroups.uuid eq uuid }.singleOrNull()?.let {
+            TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+        }
+    }
+
+    private suspend fun getTrackGroupForId(groupId: Long?): TrackGroup? = dbQuery {
         groupId?.let {
             TrackGroups.selectAll().where { TrackGroups.id eq groupId }.single().let {
                 TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
+            }
+        }
+    }
+
+    suspend fun setGroup(trackUuid: Uuid, groupUuid: Uuid) = dbQuery {
+        TrackGroups.selectAll().where { TrackGroups.uuid eq groupUuid }.singleOrNull()?.let {
+            it[TrackGroups.id]
+        }.let { groupId ->
+            Tracks.updateReturning(where = { Tracks.uuid eq trackUuid }) {
+                it[Tracks.groupId] = groupId; it[Tracks.uuid] = Uuid.random()
+            }.singleOrNull()?.let {
+                TrackNoPoints(
+                    uuid = it[Tracks.uuid],
+                    startTimestamp = it[Tracks.startTimestamp],
+                    endTimestamp = it[Tracks.endTimestamp],
+                    category = it[Tracks.category],
+                    group = getTrackGroupForId(it[Tracks.groupId]!!)
+                )
             }
         }
     }

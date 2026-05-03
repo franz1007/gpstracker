@@ -6,6 +6,7 @@ app-map {
 .container {
   flex-direction: column;
   display: flex;
+  gap: 10px;
 }
 #map {
   height: 34dvh;
