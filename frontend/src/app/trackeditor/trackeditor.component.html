@@ -1,9 +1,10 @@
 <div class="container">
 <div style="width: 100%;">
-  {{ track.value()?.category }}
+<p-select [options]="categories" appendTo="body" [ngModel]="track.value()?.category" (onChange)="onCategoryChange($event.value)" />
 </div>
 <div>
-  {{ track.value()?.group }}
+  <label for="group">Group</label>
+  <input type="text">{{ track.value()?.group }}
 </div>
   <app-map id="map" [showTrackMode]="mapTrack()" zoomKey="editor"></app-map>
 </div>
