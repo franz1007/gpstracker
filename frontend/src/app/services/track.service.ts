@@ -30,6 +30,7 @@ export class TrackService {
     environment.apiUrl + '/api/tracks/segmentMetadata';
   pointMetadataUrl: string = environment.apiUrl + '/api/tracks/pointMetadata';
   groupsUrl: string = environment.apiUrl + '/api/groups';
+  updateGroupUrl: string = environment.apiUrl + '/api/tracks/updateGroup';
 
   constructor(
     private http: HttpClient,
@@ -286,6 +287,39 @@ export class TrackService {
           }
         }) as TrackNoPoints;
         // TODO update idb (uuid and category is changed)
+        return track;
+      })
+      .catch((reason) => {
+        console.log('CategorizeTrack failed: ' + reason);
+        return null;
+      });
+  }
+  async setGroup(
+    trackUuid: string,
+    newGroupUuid: string,
+  ): Promise<null | TrackNoPoints> {
+    const params = new HttpParams().set('newGroup', newGroupUuid);
+    return await firstValueFrom(
+      this.http.post(this.updateGroupUrl + '/' + trackUuid, null, {
+        params: params,
+        responseType: 'text',
+      }),
+    )
+      .then((text) => {
+        const track = JSON.parse(text, (key, value) => {
+          if (
+            key === 'eta' ||
+            key === 'etfa' ||
+            key === 'timestamp' ||
+            key === 'startTimestamp' ||
+            key === 'endTimestamp'
+          ) {
+            return Instant.parse(value);
+          } else {
+            return value;
+          }
+        }) as TrackNoPoints;
+        // TODO update idb (uuid and group is changed) - should also update feature uuid
         return track;
       })
       .catch((reason) => {

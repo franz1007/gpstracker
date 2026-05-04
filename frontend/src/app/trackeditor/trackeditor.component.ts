@@ -91,15 +91,16 @@ export class TrackeditorComponent {
     }
   }
   onGroupChange(value: string) {
-    console.log('category of track changed');
+    console.log('group of track changed');
     console.log(value);
     const t = this.track.value();
     if (t) {
-      if (this.categories.includes(value)) {
-        this.trackService.updateCategory(t.uuid, value).then((result) => {
-          if (result != null) {
+      const newGroup = this.groups().find((group) => group.name === value);
+      if (newGroup) {
+        this.trackService.setGroup(t.uuid, newGroup.uuid).then((result) => {
+          if (result !== null) {
             this.trackId.set(result.uuid);
-            console.log('new category: ' + result.category);
+            console.log('new group: ' + result.category);
             history.replaceState(
               null,
               '',

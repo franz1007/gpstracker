@@ -9,7 +9,7 @@
     <label>
       Group
     </label>
-    <p-select [options]="groupNames()" appendTo="body" [ngModel]="track.value()?.group" (onChange)="onGroupChange($event.value)" />
+    <p-select [options]="groupNames()" appendTo="body" [ngModel]="track.value()?.group?.name" (onChange)="onGroupChange($event.value)" />
   </div>
   <div>
     <label for="new-group" style="margin-right: 10px">Create Group</label>
