@@ -247,6 +247,7 @@ export class TrackService {
             }) as TrackMetadata;
             trackObject.distanceMeters = track.distanceMeters;
             trackObject.averageSpeedKph = track.averageSpeedKph;
+            trackObject.group = track.group;
             console.log('received distances');
             this.idbService.storeMetadata(track.uuid, trackObject);
           });

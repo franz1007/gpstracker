@@ -38,6 +38,9 @@ export class TrackmanagerComponent {
       console.log('effect');
       const value = this.tracksResource.value();
       if (value !== undefined) {
+        console.log('tracks');
+        console.log(value);
+        console.log(value.filter((v) => v.group !== undefined));
         this.tracks = value;
       }
     });
