@@ -20,10 +20,11 @@ import { MapComponent } from '../tracker/map/map.component';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-trackeditor',
-  imports: [MapComponent, SelectModule, FormsModule, ButtonModule],
+  imports: [MapComponent, SelectModule, FormsModule, ButtonModule, RouterLink],
   templateUrl: './trackeditor.component.html',
   styleUrl: './trackeditor.component.css',
 })
@@ -37,6 +38,34 @@ export class TrackeditorComponent {
       console.log('trying to load resource');
       const promise = this.trackService.getTrackNoPoints(params.id);
       return promise;
+    },
+  }).asReadonly();
+
+  nextTodo = resource({
+    params: () => ({ id: this.trackId() }),
+    loader: ({ params, abortSignal }): Promise<TrackTodo | null> => {
+      const next = this.trackService
+        .getAllTracks(abortSignal)
+        .then((tracks) => {
+          const todo = tracks.filter(
+            (item) =>
+              item.uuid !== this.trackId() &&
+              (item.category === 'UNCATEGORIZED' || item.group === null),
+          );
+          console.log(tracks);
+          console.log(todo);
+          tracks.forEach((t) => console.log(t.group));
+          if (todo.length > 0) {
+            return new TrackTodo(
+              todo[0].uuid,
+              'Next Todo (' + todo.length + ' left)',
+              ['/edit', todo[0].uuid],
+            );
+          } else {
+            return null;
+          }
+        });
+      return next;
     },
   }).asReadonly();
 
@@ -130,5 +159,16 @@ export class TrackeditorComponent {
         this.groups.update((oldValue) => [result, ...oldValue]);
       });
     }
+  }
+}
+
+class TrackTodo {
+  uuid: string;
+  text: string;
+  link: string[];
+  constructor(uuid: string, text: string, link: string[]) {
+    this.uuid = uuid;
+    this.text = text;
+    this.link = link;
   }
 }

@@ -180,6 +180,7 @@ export class TrackService {
         track.startTimestamp,
         track.endTimestamp,
         track.category,
+        track.group,
       );
     });
   }

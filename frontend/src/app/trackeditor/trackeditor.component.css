@@ -14,3 +14,7 @@ app-map {
   margin-top: auto;
   position: relative;
 }
+
+.bottom-right {
+  align-self: flex-end;
+}
