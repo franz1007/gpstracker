@@ -51,13 +51,12 @@
             <td style="text-align: right";>
               {{ calculateTotalDistance(track.group?.uuid).toLocaleString() }}
             </td>
-            <td colspan=5>
-            </td>
+            <td colspan=5></td>
         </tr>
     </ng-template>
     <ng-template #groupfooter let-track>
         <tr class="p-rowgroup-footer">
-            <td colspan="8" style="text-align: right">Total Tracks</td>
+            <td colspan="8" style="text-align: right">Total Tracks: {{ countTracks(track.group?.uuid) }}</td>
         </tr>
     </ng-template>
     <ng-template #expandedrow let-track>

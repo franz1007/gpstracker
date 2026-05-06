@@ -98,4 +98,13 @@ export class TrackmanagerComponent {
     const minutes = total.minusHours(hours).toMinutes();
     return hours + ':' + minutes.toString().padStart(2, '0') + ' h';
   }
+  countTracks(uuid?: string) {
+    return this.tracks.filter((track) => {
+      if (uuid) {
+        return track.group?.uuid === uuid;
+      } else {
+        return track.group === null;
+      }
+    }).length;
+  }
 }
