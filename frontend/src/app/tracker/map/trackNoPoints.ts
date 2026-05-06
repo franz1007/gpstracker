@@ -70,8 +70,6 @@ export class TrackMetadata {
     const minutes = this.duration.minusHours(hours).toMinutes();
     this.durationString =
       hours + ':' + minutes.toString().padStart(2, '0') + ' h';
-    console.log(startTimestamp.toString());
-    console.log(this.startTimestampString);
     this.group = group;
   }
 }

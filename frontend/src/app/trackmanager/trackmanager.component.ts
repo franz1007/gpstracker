@@ -91,7 +91,6 @@ export class TrackmanagerComponent {
         }
       })
       .reduce<Duration>((acc, value, index, arr) => {
-        console.log(value.duration);
         return value.duration.plus(acc);
       }, Duration.ZERO);
 

@@ -56,13 +56,25 @@ export class IdbcacheService {
               id +
               ' from indexeddb',
           );
-          Duration.from(value.metadata.duration); //For some reason this implicitly adds the class prototype to the parameter
-          return value.metadata;
+          return new TrackMetadata(
+            value.metadata.uuid,
+            Instant.parse(value.startTimestamp),
+            Instant.parse(value.endTimestamp),
+            value.metadata.category,
+            value.metadata.distanceMeters,
+            value.metadata.averageSpeedKph,
+            value.metadata.group,
+          );
+        } else {
+          console.log(
+            'Did not find metadata for Track ' + id + ' in indexeddb',
+          );
         }
         return null;
       })
-      .catch(() => {
+      .catch((reason) => {
         console.log('error getting ' + id + 'from idb');
+        console.log(reason);
         return null;
       });
   }
@@ -89,7 +101,15 @@ export class IdbcacheService {
 
   public storeMetadata(id: string, metadata: TrackMetadata) {
     this.initDB().then((db) => {
-      db.put('metadata', { metadata: metadata }, id);
+      db.put(
+        'metadata',
+        {
+          metadata: metadata,
+          startTimestamp: metadata.startTimestamp.toString(),
+          endTimestamp: metadata.endTimestamp.toString(),
+        },
+        id,
+      );
     });
   }
 
@@ -99,7 +119,15 @@ export class IdbcacheService {
         if (metadata != null) {
           metadata.uuid = newId;
           metadata.category = newCategory;
-          db.put('metadata', { metadata: metadata }, newId).catch((reason) => {
+          db.put(
+            'metadata',
+            {
+              metadata: metadata,
+              startTimestamp: metadata.startTimestamp.toString(),
+              endTimestamp: metadata.endTimestamp.toString(),
+            },
+            newId,
+          ).catch((reason) => {
             console.log('put metadata to db in updateCategory failed');
           });
           db.delete('metadata', oldId).catch((reason) => {
@@ -133,11 +161,11 @@ export class IdbcacheService {
   }
 
   async initDB() {
-    return await openDB<MyDB>('my-db', 5, {
+    return await openDB<MyDB>('my-db', 6, {
       upgrade(db, oldVersion, newVersion, transaction, event) {
         if (oldVersion !== newVersion) {
-          if (oldVersion === 3 || oldVersion === 4)
-            db.deleteObjectStore('features');
+          db.deleteObjectStore('features');
+          db.deleteObjectStore('metadata');
         }
         db.createObjectStore('features');
         db.createObjectStore('metadata');
@@ -159,6 +187,8 @@ interface MyDB extends DBSchema {
     key: string;
     value: {
       metadata: TrackMetadata;
+      startTimestamp: string;
+      endTimestamp: string;
     };
   };
 }
