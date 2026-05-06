@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Feature } from 'geojson';
 import { TrackMetadata } from './tracker/map/trackNoPoints';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { Instant } from '@js-joda/core';
+import { Duration, Instant } from '@js-joda/core';
 
 @Injectable({
   providedIn: 'root',
@@ -56,6 +56,7 @@ export class IdbcacheService {
               id +
               ' from indexeddb',
           );
+          Duration.from(value.metadata.duration); //For some reason this implicitly adds the class prototype to the parameter
           return value.metadata;
         }
         return null;

@@ -31,7 +31,7 @@
     </ng-template>
     <ng-template #groupheader let-track let-rowIndex="rowIndex" let-expanded="expanded">
         <tr>
-            <td colspan="8">
+            <td colspan="1">
                 <button
                         type="button"
                         pButton
@@ -44,6 +44,14 @@
                         [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'">
                 </button>
                 <span class="font-bold ml-2">{{track.group?.name ?? "No Group"}}</span>
+            </td>
+            <td>
+              {{ calculateTotalDuration(track.group?.uuid) }}
+            </td>
+            <td>
+              {{ calculateTotalDistance(track.group?.uuid) }}
+            </td>
+            <td colspan=5>
             </td>
         </tr>
     </ng-template>

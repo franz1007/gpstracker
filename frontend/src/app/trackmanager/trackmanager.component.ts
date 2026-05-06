@@ -7,6 +7,7 @@ import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { TagModule } from 'primeng/tag';
 import { RouterLink } from '@angular/router';
+import { Duration } from '@js-joda/core';
 
 @Component({
   selector: 'app-trackmanager',
@@ -38,9 +39,6 @@ export class TrackmanagerComponent {
       console.log('effect');
       const value = this.tracksResource.value();
       if (value !== undefined) {
-        console.log('tracks');
-        console.log(value);
-        console.log(value.filter((v) => v.group !== undefined));
         this.tracks = value;
       }
     });
@@ -68,5 +66,37 @@ export class TrackmanagerComponent {
     } else {
       console.error('Changed track with ' + trackUuid + ' not found in array');
     }
+  }
+
+  calculateTotalDistance(uuid?: string) {
+    return this.tracks
+      .filter((track) => {
+        if (uuid) {
+          return track.group?.uuid === uuid;
+        } else {
+          return track.group === null;
+        }
+      })
+      .reduce<number>((acc, value, index, arr) => {
+        return acc + (value.distanceMeters ?? 0);
+      }, 0);
+  }
+  calculateTotalDuration(uuid?: string) {
+    const total = this.tracks
+      .filter((track) => {
+        if (uuid) {
+          return track.group?.uuid === uuid;
+        } else {
+          return track.group === null;
+        }
+      })
+      .reduce<Duration>((acc, value, index, arr) => {
+        console.log(value.duration);
+        return value.duration.plus(acc);
+      }, Duration.ZERO);
+
+    const hours = total.toHours();
+    const minutes = total.minusHours(hours).toMinutes();
+    return hours + ':' + minutes.toString().padStart(2, '0') + ' h';
   }
 }
