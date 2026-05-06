@@ -7,7 +7,8 @@ import { SelectChangeEvent, SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { TagModule } from 'primeng/tag';
 import { RouterLink } from '@angular/router';
-import { Duration } from '@js-joda/core';
+import { DateTimeFormatter, Duration, ZoneId } from '@js-joda/core';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-trackmanager',
@@ -33,7 +34,6 @@ export class TrackmanagerComponent {
     },
   }).asReadonly();
   tracks: Array<TrackMetadata> = new Array<TrackMetadata>();
-
   constructor(private trackService: TrackService) {
     effect(() => {
       console.log('effect');
@@ -106,5 +106,48 @@ export class TrackmanagerComponent {
         return track.group === null;
       }
     }).length;
+  }
+
+  calculateAverageDistance(uuid?: string) {
+    const filtered = this.tracks.filter((track) => {
+      if (uuid) {
+        return track.group?.uuid === uuid;
+      } else {
+        return track.group === null;
+      }
+    });
+
+    const distance = filtered.reduce<number>((acc, value, index, arr) => {
+      return acc + (value.distanceMeters ?? 0);
+    }, 0);
+    return distance / filtered.length;
+  }
+
+  calculateDistancePerDay(uuid?: string) {
+    const filtered = this.tracks.filter((track) => {
+      if (uuid) {
+        return track.group?.uuid === uuid;
+      } else {
+        return track.group === null;
+      }
+    });
+    // Broken for potential 3-day tracks
+    const set = new Set<string>();
+    filtered.map((track) => {
+      set.add(
+        track.startTimestamp
+          .atZone(ZoneId.SYSTEM)
+          .format(DateTimeFormatter.ofPattern('yyyy-MM-dd')),
+      );
+      set.add(
+        track.endTimestamp
+          .atZone(ZoneId.SYSTEM)
+          .format(DateTimeFormatter.ofPattern('yyyy-MM-dd')),
+      );
+    });
+    const distance = filtered.reduce<number>((acc, value, index, arr) => {
+      return acc + (value.distanceMeters ?? 0);
+    }, 0);
+    return distance / set.size;
   }
 }

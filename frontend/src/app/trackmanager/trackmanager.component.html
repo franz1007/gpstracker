@@ -56,7 +56,9 @@
     </ng-template>
     <ng-template #groupfooter let-track>
         <tr class="p-rowgroup-footer">
-            <td colspan="8" style="text-align: right">Total Tracks: {{ countTracks(track.group?.uuid) }}</td>
+            <td colspan="3" style="text-align: right">Average distance per track: {{ calculateAverageDistance(track.group?.uuid).toLocaleString() }}</td>
+            <td colspan="3" style="text-align: right">Average distance per day: {{ calculateDistancePerDay(track.group?.uuid).toLocaleString() }}</td>
+            <td colspan="2" style="text-align: right">Total Tracks: {{ countTracks(track.group?.uuid) }}</td>
         </tr>
     </ng-template>
     <ng-template #expandedrow let-track>
