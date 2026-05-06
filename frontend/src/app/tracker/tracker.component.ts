@@ -73,6 +73,12 @@ export class TrackerComponent {
   private first: boolean = true;
   constructor(private trackService: TrackService) {
     effect(() => {
+      if (this.trackId().startsWith('group_')) {
+        console.log('groupmode set');
+        this.groupMode.set(true);
+      }
+    });
+    effect(() => {
       if (this.tracksSignal().length > 0)
         if (this.first) {
           this.first = false;
@@ -85,10 +91,12 @@ export class TrackerComponent {
   }
 
   private findTreeNode(searchData: string): TreeNode<any> | undefined {
+    console.log('searching treeNode: ' + searchData);
+    console.log(this.tracksSignal());
     return this.flattenTreeNodes(this.tracksSignal()).find((treeNode) =>
       treeNode.data instanceof TrackNoPoints
         ? treeNode.data.uuid === searchData
-        : treeNode.data === searchData,
+        : treeNode.data === searchData || treeNode.key === searchData,
     );
   }
 
@@ -216,23 +224,21 @@ export class TrackerComponent {
       }
     });
 
-    let categoryIndex = 1;
-    const monthMap = trackMap;
     const groupNodes = new Array<TreeNode>();
-    let monthIndex = 1;
-    for (const monthEntry of monthMap) {
-      const trackNodes = monthEntry[1].map((track, trackIndex) => {
+    let groupIndex = 1;
+    for (const trackEntry of trackMap) {
+      const trackNodes = trackEntry[1].map((track, trackIndex) => {
         return {
-          key: '1-' + categoryIndex + '-' + monthIndex + '-' + trackIndex,
+          key: '1-' + groupIndex + '-' + trackIndex,
           label: track.startTimestamp.toString(),
           data: track,
           icon: 'pi pi-fw pi-cog',
         };
       });
       groupNodes.push({
-        key: '1-' + categoryIndex + '-' + monthIndex++,
-        label: monthEntry[0],
-        data: monthEntry[1],
+        key: 'group_' + (trackEntry[1][0].group?.uuid ?? ''),
+        label: trackEntry[0],
+        data: trackEntry[1],
         icon: 'pi pi-fw pi-cog',
         children: trackNodes,
       });

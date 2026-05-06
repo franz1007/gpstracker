@@ -51,7 +51,13 @@
             <td style="text-align: right";>
               {{ calculateTotalDistance(track.group?.uuid).toLocaleString() }}
             </td>
-            <td colspan="5" style="text-align: right">Total Tracks: {{ countTracks(track.group?.uuid) }}</td>
+            <td colspan="2" style="text-align: right">Total Tracks: {{ countTracks(track.group?.uuid) }}</td>
+            <td>
+                <a [routerLink]="['/map', 'group_' + (track.group?.uuid ?? '')]">
+                <span class="pi pi-map-marker"></span>
+                </a>
+            </td>
+            <td colspan="2"></td>
         </tr>
     </ng-template>
     <ng-template #groupfooter let-track>
