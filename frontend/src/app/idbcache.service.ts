@@ -166,6 +166,7 @@ export class IdbcacheService {
         if (oldVersion !== newVersion) {
           db.deleteObjectStore('features');
           db.deleteObjectStore('metadata');
+          console.log('Deleted IDB Object Stores');
         }
         db.createObjectStore('features');
         db.createObjectStore('metadata');

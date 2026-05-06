@@ -45,11 +45,11 @@
                 </button>
                 <span class="font-bold ml-2">{{track.group?.name ?? "No Group"}}</span>
             </td>
-            <td>
+            <td style="text-align: right";>
               {{ calculateTotalDuration(track.group?.uuid) }}
             </td>
-            <td>
-              {{ calculateTotalDistance(track.group?.uuid) }}
+            <td style="text-align: right";>
+              {{ calculateTotalDistance(track.group?.uuid).toLocaleString() }}
             </td>
             <td colspan=5>
             </td>
