@@ -1,7 +1,10 @@
 <section class="container">
     <aside [ngClass]="{'expanding': isExpanding}" [ngStyle]="{backgroundColor:'var(--p-content-background)'}">
+      <div>
         <p-button id="sidebarbutton" (onClick)="toggleSideBar()" icon="pi pi-bars" />
-        <p-tree id="tree" [value]="tracks" selectionMode="single" [(selection)]="selection" />
+          <p-button id="modeswitch" (onClick)="switchGroupMode()" >{{modeswitchText()}}</p-button>
+      </div>
+        <p-tree id="tree" [value]="tracksSignal()" selectionMode="single" [(selection)]="selection" />
     </aside>
     <div class="main-body">
         <p-button [ngClass]="{'expanding': isExpanding}" id="overlaybutton" (onClick)="toggleSideBar()" icon="pi pi-bars" />
