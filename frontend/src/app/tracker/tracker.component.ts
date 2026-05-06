@@ -117,7 +117,11 @@ export class TrackerComponent {
       const sorted = value.sort((a, b) => {
         return b.startTimestamp.compareTo(a.startTimestamp);
       });
-      return this.generateTreeNodesData(sorted);
+      if (this.groupMode()) {
+        return this.generateGroupsTreeNodeData(sorted);
+      } else {
+        return this.generateTreeNodesData(sorted);
+      }
     } else {
       return [];
     }
@@ -196,6 +200,57 @@ export class TrackerComponent {
         data: tracks,
         icon: 'pi pi-fw pi-folder-plus',
         children: categoryNodes,
+      },
+    ];
+  }
+
+  generateGroupsTreeNodeData(tracks: TrackNoPoints[]): TreeNode[] {
+    const trackMap = new Map<string, Array<TrackNoPoints>>();
+    tracks.forEach((track) => {
+      const group = track.group?.name ?? 'No Group';
+      const array = trackMap.get(group);
+      if (array === undefined) {
+        trackMap.set(group, new Array(track));
+      } else {
+        array.push(track);
+      }
+    });
+
+    let categoryIndex = 1;
+    const monthMap = trackMap;
+    const groupNodes = new Array<TreeNode>();
+    let monthIndex = 1;
+    for (const monthEntry of monthMap) {
+      const trackNodes = monthEntry[1].map((track, trackIndex) => {
+        return {
+          key: '1-' + categoryIndex + '-' + monthIndex + '-' + trackIndex,
+          label: track.startTimestamp.toString(),
+          data: track,
+          icon: 'pi pi-fw pi-cog',
+        };
+      });
+      groupNodes.push({
+        key: '1-' + categoryIndex + '-' + monthIndex++,
+        label: monthEntry[0],
+        data: monthEntry[1],
+        icon: 'pi pi-fw pi-cog',
+        children: trackNodes,
+      });
+    }
+
+    return [
+      {
+        key: '0',
+        label: 'Current track',
+        data: 'latest',
+        icon: 'pi pi-fw pi-cog',
+      },
+      {
+        key: '1',
+        label: 'Tracks',
+        data: tracks,
+        icon: 'pi pi-fw pi-folder-plus',
+        children: groupNodes,
       },
     ];
   }
