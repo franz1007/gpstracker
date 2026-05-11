@@ -163,10 +163,20 @@ export class IdbcacheService {
   async initDB() {
     return await openDB<MyDB>('my-db', 6, {
       upgrade(db, oldVersion, newVersion, transaction, event) {
+        console.log('IDB Versions: ' + oldVersion + '; ' + newVersion);
         if (oldVersion !== newVersion) {
-          db.deleteObjectStore('features');
-          db.deleteObjectStore('metadata');
-          console.log('Deleted IDB Object Stores');
+          console.log('Features: ' + db.objectStoreNames.contains('features'));
+          console.log('Metadata: ' + db.objectStoreNames.contains('metadata'));
+          if (db.objectStoreNames.contains('features')) {
+            console.log('Deleting IDB Object Stores');
+            db.deleteObjectStore('features');
+            console.log('Deleted IDB Object Stores');
+          }
+          if (db.objectStoreNames.contains('metadata')) {
+            console.log('Deleting IDB Object Stores');
+            db.deleteObjectStore('metadata');
+            console.log('Deleted IDB Object Stores');
+          }
         }
         db.createObjectStore('features');
         db.createObjectStore('metadata');
