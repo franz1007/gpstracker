@@ -3,7 +3,9 @@ package eu.franz1007.gpstracker.database
 import eu.franz1007.exposed.postgis.*
 import eu.franz1007.gpstracker.database.migration.database
 import eu.franz1007.gpstracker.model.*
+import io.ktor.server.plugins.BadRequestException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.selects.select
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -15,6 +17,7 @@ import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -201,6 +204,64 @@ class GpsPointService(database: Database) {
                         TrackGroup(it[TrackGroups.uuid], it[TrackGroups.name])
                     })
             }.singleOrNull()
+        }
+    }
+
+    suspend fun splitTrackAfterPoint(trackUuid: Uuid, afterPoint: Int): Pair<TrackNoPoints, TrackNoPoints>? = dbQuery {
+        Tracks.selectAll().where { Tracks.uuid eq trackUuid }.singleOrNull()?.let { oldTrack ->
+
+            val pointCount = GpsPoints.select(GpsPoints.id.count()).where { GpsPoints.trackId eq oldTrack[Tracks.id] }.single().let { it[GpsPoints.id.count()] }
+            if(afterPoint >= pointCount){
+                throw IllegalArgumentException("This track only has $pointCount points. Can not cut after point $afterPoint")
+            }
+
+            val subquery = GpsPoints.select(GpsPoints.id).where { GpsPoints.trackId eq oldTrack[Tracks.id] }
+                .orderBy(GpsPoints.timestamp).limit(afterPoint)
+
+            val newTrack = Tracks.insert {
+                it[startTimestamp] = oldTrack[startTimestamp]
+                it[endTimestamp] = Instant.DISTANT_FUTURE
+                it[category] = oldTrack[category]
+                it[groupId] = oldTrack[groupId]
+            }[Tracks.id]
+
+            GpsPoints.update(where = {
+                GpsPoints.id inSubQuery subquery
+            }) { it[GpsPoints.trackId] = newTrack }
+
+            val newTrackEnd = GpsPoints.select(GpsPoints.timestamp).where { GpsPoints.trackId eq newTrack }
+                .orderBy(GpsPoints.timestamp, SortOrder.DESC).limit(1).single().let { it[GpsPoints.timestamp] }
+            val newResult =
+                Tracks.updateReturning(where = { Tracks.id eq newTrack }) { it[Tracks.endTimestamp] = newTrackEnd }
+                    .single().let {
+                        val group = it[Tracks.groupId]?.let { groupId ->
+                            TrackGroups.selectAll().where { TrackGroups.id eq groupId }.single().let { groupRow ->
+                                TrackGroup(groupRow[TrackGroups.uuid], groupRow[TrackGroups.name])
+                            }
+                        }
+                        TrackNoPoints(
+                            it[Tracks.uuid],
+                            it[Tracks.startTimestamp],
+                            it[Tracks.endTimestamp],
+                            it[Tracks.category],
+                            group
+                        )
+                    }
+            val oldTrackStart = GpsPoints.select(GpsPoints.timestamp).where { GpsPoints.trackId eq oldTrack[Tracks.id] }
+                .orderBy(GpsPoints.timestamp, SortOrder.ASC).limit(1).single().let { it[GpsPoints.timestamp] }
+            val oldResult = Tracks.updateReturning(where = { Tracks.id eq oldTrack[Tracks.id] }) {
+                it[Tracks.startTimestamp] = oldTrackStart; it[Tracks.uuid] = Uuid.random()
+            }.single().let {
+                val group = it[Tracks.groupId]?.let { groupId ->
+                    TrackGroups.selectAll().where { TrackGroups.id eq groupId }.single().let { groupRow ->
+                        TrackGroup(groupRow[TrackGroups.uuid], groupRow[TrackGroups.name])
+                    }
+                }
+                TrackNoPoints(
+                    it[Tracks.uuid], it[Tracks.startTimestamp], it[Tracks.endTimestamp], it[Tracks.category], group
+                )
+            }
+            Pair(oldResult, newResult)
         }
     }
 
