@@ -213,6 +213,17 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                 get("/latest") {
                     call.respondNullable(gpsPointService.readLatestTrackNoPoints())
                 }
+                post("/splitTrack/{uuid}"){
+                    val trackId = getUuidParam("uuid")
+                    val segmentPosition = call.parameters.getOrFail<Int>("segmentPosition")
+                    val tracks = gpsPointService.splitTrackAfterPoint(trackId, afterPoint = segmentPosition)
+                    if (tracks == null) {
+                        call.respond(HttpStatusCode.BadRequest, "No track or group available with this uuid")
+                    } else {
+                        call.respond(tracks)
+                    }
+                }
+
             }
 
             route("/trackCategories") {
