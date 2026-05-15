@@ -9,7 +9,7 @@ import {
 import { UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
 import { RouterLink } from '@angular/router';
-import { Chart, ChartEvent, plugins } from 'chart.js';
+import { Chart, ChartData, ChartEvent, ChartOptions, plugins } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {
   Accordion,
@@ -18,6 +18,7 @@ import {
   AccordionModule,
   AccordionPanel,
 } from 'primeng/accordion';
+import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 
 @Component({
   selector: 'app-trackdetails',
@@ -42,7 +43,7 @@ export class TrackdetailsComponent {
     });
   }
 
-  private zoomOptions = {
+  private zoomOptions: ZoomPluginOptions = {
     zoom: {
       wheel: {
         enabled: true,
@@ -61,9 +62,13 @@ export class TrackdetailsComponent {
     },
   };
 
-  data = {};
-  elevationData = {};
-  linearOptions = {
+  data: ChartData = {
+    datasets: [],
+  };
+  elevationData: ChartData = {
+    datasets: [],
+  };
+  linearOptions: ChartOptions = {
     scales: {
       x: {
         type: 'linear',
@@ -73,7 +78,7 @@ export class TrackdetailsComponent {
       zoom: this.zoomOptions,
     },
   };
-  elevationOptions = {
+  elevationOptions: ChartOptions = {
     scales: {
       x: {
         type: 'linear',
