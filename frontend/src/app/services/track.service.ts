@@ -227,6 +227,9 @@ export class TrackService {
           track.startTimestamp,
           track.endTimestamp,
           track.category,
+          undefined,
+          undefined,
+          track.group,
         );
 
         fetch(this.trackMetadataUrl + '/' + trackObject.uuid, {
