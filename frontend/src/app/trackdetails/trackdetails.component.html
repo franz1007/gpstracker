@@ -1,5 +1,23 @@
-<p-chart type="line" [data]="elevationData" [options]="elevationOptions" height="40vh" (onDataSelect)=selected($event)></p-chart>
-<p-chart type="line" [data]="data" [options]="linearOptions" height="40vh"></p-chart>
+<p-accordion [multiple]="true" [value]="['0', '1']">
+  <p-accordion-panel value="0">
+    <p-accordion-header>
+      Elevation/Speed
+    </p-accordion-header>
+    <p-accordion-content>
+      <p-chart type="line" [data]="elevationData" [options]="elevationOptions" height="36vh"></p-chart>
+    </p-accordion-content>
+  </p-accordion-panel>
+
+  <p-accordion-panel value="1">
+    <p-accordion-header>
+     Duration/Distance
+    </p-accordion-header>
+    <p-accordion-content>
+      <p-chart type="line" [data]="data" [options]="linearOptions" height="36vh"></p-chart>
+    </p-accordion-content>
+  </p-accordion-panel>
+
+</p-accordion>
 <a [routerLink]="['/map', trackId()]">
   <span class="pi pi-map-marker"></span>
   Show on map

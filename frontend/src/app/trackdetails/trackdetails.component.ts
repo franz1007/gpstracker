@@ -8,15 +8,27 @@ import {
 } from '@angular/core';
 import { UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
-import { TrackMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
-import { firstValueFrom } from 'rxjs';
 import { RouterLink } from '@angular/router';
-import { Chart, plugins } from 'chart.js';
+import { Chart, ChartEvent, plugins } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionHeader,
+  AccordionModule,
+  AccordionPanel,
+} from 'primeng/accordion';
 
 @Component({
   selector: 'app-trackdetails',
-  imports: [UIChart, RouterLink],
+  imports: [
+    UIChart,
+    RouterLink,
+    AccordionPanel,
+    AccordionHeader,
+    AccordionContent,
+    Accordion,
+  ],
   templateUrl: './trackdetails.component.html',
   styleUrl: './trackdetails.component.css',
 })
@@ -131,7 +143,6 @@ export class TrackdetailsComponent {
               y: metadata.speed * 3.6,
             };
           });
-        console.log(heights);
         this.elevationData = {
           datasets: [
             {
@@ -152,8 +163,5 @@ export class TrackdetailsComponent {
         };
       });
     });
-  }
-  selected(ev: Event) {
-    console.log(ev);
   }
 }
