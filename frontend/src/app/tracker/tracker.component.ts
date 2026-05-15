@@ -17,7 +17,6 @@ import { TreeNode } from 'primeng/api';
 import { TrackNoPoints } from './map/trackNoPoints';
 import { TrackService } from '../services/track.service';
 import { DateTimeFormatter, LocalDateTime } from '@js-joda/core';
-
 @Component({
   selector: 'app-tracker',
   imports: [MapComponent, DrawerModule, ButtonModule, CommonModule, TreeModule],

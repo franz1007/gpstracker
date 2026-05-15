@@ -95,11 +95,10 @@ export class IdbcacheService {
         },
         id,
       );
-      const transaction = db.transaction('features', 'readwrite');
     });
   }
 
-  public storeMetadata(id: string, metadata: TrackMetadata) {
+  public async storeMetadata(id: string, metadata: TrackMetadata) {
     this.initDB().then((db) => {
       db.put(
         'metadata',
@@ -113,26 +112,31 @@ export class IdbcacheService {
     });
   }
 
-  public updateCategory(oldId: string, newId: string, newCategory: string) {
+  public async updateTrack(
+    oldId: string,
+    newId: string,
+    metadataFun: (oldTrack: TrackMetadata) => TrackMetadata,
+    featureFun: (
+      oldFeature: Feature<GeoJSON.LineString>,
+      startTimestampMillis: number,
+      endTimestampMillis: number,
+    ) => [Feature<GeoJSON.LineString>, number, number],
+  ) {
     this.initDB().then((db) => {
       this.getMetadata(oldId).then((metadata) => {
         if (metadata != null) {
-          metadata.uuid = newId;
-          metadata.category = newCategory;
+          const newMetadata = metadataFun(metadata);
+          newMetadata.uuid = newId;
           db.put(
             'metadata',
             {
-              metadata: metadata,
-              startTimestamp: metadata.startTimestamp.toString(),
-              endTimestamp: metadata.endTimestamp.toString(),
+              metadata: newMetadata,
+              startTimestamp: newMetadata.startTimestamp.toString(),
+              endTimestamp: newMetadata.endTimestamp.toString(),
             },
             newId,
-          ).catch((reason) => {
-            console.log('put metadata to db in updateCategory failed');
-          });
-          db.delete('metadata', oldId).catch((reason) => {
-            console.log('delete metadata from db failed');
-          });
+          );
+          db.delete('metadata', oldId);
         }
       });
       this.getTrackFeature(oldId).then((data) => {
@@ -141,20 +145,21 @@ export class IdbcacheService {
           data.endTimestampMillis != null &&
           data.startTimestampMillis != null
         ) {
+          const [newFeature, newStart, newEnd] = featureFun(
+            data.feature,
+            data.startTimestampMillis,
+            data.endTimestampMillis,
+          );
           db.put(
             'features',
             {
-              feature: data.feature,
-              startTimestamp: data.startTimestampMillis,
-              endTimestamp: data.endTimestampMillis,
+              feature: newFeature,
+              startTimestamp: newStart,
+              endTimestamp: newEnd,
             },
             newId,
-          ).catch((reason) => {
-            console.log('put feature to db in updateCategory failed');
-          });
-          db.delete('features', oldId).catch((reason) => {
-            console.log('delete feature from db failed');
-          });
+          );
+          db.delete('features', oldId);
         }
       });
     });

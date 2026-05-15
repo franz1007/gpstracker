@@ -131,7 +131,7 @@ export class TrackdetailsComponent {
         };
       });
       const distancePromise = this.trackService.getPointMetadata(track.uuid);
-      const geoJsonPromise = this.trackService.getTrackGeoJsonPromise(track);
+      const geoJsonPromise = this.trackService.getTrackGeoJson(track);
       Promise.all([distancePromise, geoJsonPromise]).then((result) => {
         const pointMedatada = result[0];
         const heights = result[1].geometry.coordinates.map((coord, index) => {

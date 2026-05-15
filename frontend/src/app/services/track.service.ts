@@ -89,15 +89,7 @@ export class TrackService {
     }) as PointMetadata[];
   }
 
-  async getTrackGeoJsonPromise(
-    track: TrackNoPoints,
-  ): Promise<Feature<GeoJSON.LineString>> {
-    return firstValueFrom(this.getTrackGeoJson(track));
-  }
-
-  getTrackGeoJson(
-    track: TrackNoPoints,
-  ): Observable<Feature<GeoJSON.LineString>> {
+  getTrackGeoJson(track: TrackNoPoints): Promise<Feature<GeoJSON.LineString>> {
     const trackResult = from(
       this.idbService.getTrackFeature(track.uuid).then((result) => {
         if (
@@ -111,10 +103,10 @@ export class TrackService {
           const res = this.getTrackGeoJsonFromUrl(track.uuid);
           return firstValueFrom(
             res.pipe(
-              map((feature, index) => {
-                this.storeGeoJson(
-                  feature,
+              map((feature, _) => {
+                this.idbService.storeFeature(
                   track.uuid,
+                  feature,
                   track.startTimestamp,
                   track.endTimestamp,
                 );
@@ -132,17 +124,7 @@ export class TrackService {
         }
       }),
     );
-    return trackResult;
-  }
-
-  async storeGeoJson(
-    track: Feature<GeoJSON.LineString>,
-    uuid: string,
-    startTimestamp: Instant,
-    endTimestamp: Instant,
-  ) {
-    this.idbService.storeFeature(uuid, track, startTimestamp, endTimestamp);
-    console.log('stored track');
+    return firstValueFrom(trackResult);
   }
 
   getTrackGeoJsonFromUrl(id: string): Observable<Feature<GeoJSON.LineString>> {
@@ -232,29 +214,11 @@ export class TrackService {
           track.group,
         );
 
-        fetch(this.trackMetadataUrl + '/' + trackObject.uuid, {
-          signal: abortSignal,
-        }).then((response) => {
-          response.text().then((text) => {
-            const track = JSON.parse(text, (key, value) => {
-              if (
-                key === 'eta' ||
-                key === 'etfa' ||
-                key === 'timestamp' ||
-                key === 'startTimestamp' ||
-                key === 'endTimestamp'
-              ) {
-                return Instant.parse(value);
-              } else {
-                return value;
-              }
-            }) as TrackMetadata;
-            trackObject.distanceMeters = track.distanceMeters;
-            trackObject.averageSpeedKph = track.averageSpeedKph;
-            trackObject.group = track.group;
-            console.log('received distances');
-            this.idbService.storeMetadata(track.uuid, trackObject);
-          });
+        this.getTrackMetadata(trackObject.uuid).then((track) => {
+          trackObject.distanceMeters = track.distanceMeters;
+          trackObject.averageSpeedKph = track.averageSpeedKph;
+          trackObject.group = track.group;
+          console.log('received distances');
         });
         return trackObject;
       } else {
@@ -262,6 +226,34 @@ export class TrackService {
       }
     });
     return await Promise.all(test);
+  }
+
+  async getTrackMetadata(
+    trackId: string,
+    abortSignal: AbortSignal | null = null,
+  ): Promise<TrackMetadata> {
+    return fetch(this.trackMetadataUrl + '/' + trackId, {
+      signal: abortSignal,
+    }).then(async (response) => {
+      // Todo abortsignal
+      return response.text().then((text) => {
+        const track = JSON.parse(text, (key, value) => {
+          if (
+            key === 'eta' ||
+            key === 'etfa' ||
+            key === 'timestamp' ||
+            key === 'startTimestamp' ||
+            key === 'endTimestamp'
+          ) {
+            return Instant.parse(value);
+          } else {
+            return value;
+          }
+        }) as TrackMetadata;
+        this.idbService.storeMetadata(track.uuid, track);
+        return track;
+      });
+    });
   }
 
   async updateCategory(
@@ -291,7 +283,15 @@ export class TrackService {
             return value;
           }
         }) as TrackNoPoints;
-        // TODO update idb (uuid and category is changed)
+        this.idbService.updateTrack(
+          trackUuid,
+          track.uuid,
+          (metadata) => {
+            metadata.category = newCategory;
+            return metadata;
+          },
+          (feature, start, end) => [feature, start, end],
+        );
         return track;
       })
       .catch((reason) => {
@@ -299,6 +299,7 @@ export class TrackService {
         return null;
       });
   }
+
   async setGroup(
     trackUuid: string,
     newGroupUuid: string,
@@ -324,7 +325,15 @@ export class TrackService {
             return value;
           }
         }) as TrackNoPoints;
-        // TODO update idb (uuid and group is changed) - should also update feature uuid
+        this.idbService.updateTrack(
+          trackUuid,
+          track.uuid,
+          (metadata) => {
+            metadata.group = track.group;
+            return metadata;
+          },
+          (feature, start, end) => [feature, start, end],
+        );
         return track;
       })
       .catch((reason) => {

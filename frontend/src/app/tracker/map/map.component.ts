@@ -238,11 +238,9 @@ export class MapComponent implements OnDestroy, OnInit {
           },
         });
         this.lines.set(track.uuid, line);
-        return firstValueFrom(this.trackService.getTrackGeoJson(track)).then(
-          (lineString) => {
-            return line.addData(lineString);
-          },
-        );
+        return this.trackService
+          .getTrackGeoJson(track)
+          .then((lineString) => line.addData(lineString));
       } else return line;
     });
     const featureGroup = L.featureGroup(
