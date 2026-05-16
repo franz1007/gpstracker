@@ -14,6 +14,7 @@ import {
 import { UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
 import { RouterLink } from '@angular/router';
+import { Feature, LineString, Position } from 'geojson';
 import {
   ActiveElement,
   Chart,
@@ -31,7 +32,7 @@ import {
   AccordionPanel,
 } from 'primeng/accordion';
 import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
-import { SegmentMetadata } from '../tracker/map/trackNoPoints';
+import { SegmentMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
 import * as L from 'leaflet';
 
 @Component({
@@ -166,6 +167,20 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
     params: () => ({ id: this.trackId() }),
     loader: ({ params, abortSignal }): Promise<SegmentMetadata[] | null> => {
       return this.trackService.getSegmentMetadata(params.id, abortSignal);
+    },
+  });
+
+  trackNoPoints = resource({
+    params: () => ({ id: this.trackId() }),
+    loader: ({ params, abortSignal }): Promise<TrackNoPoints | null> => {
+      return this.trackService.getTrackNoPoints(params.id);
+    },
+  });
+  trackGeoJson = resource({
+    params: () => ({ track: this.trackNoPoints.value() }),
+    loader: ({ params, abortSignal }): Promise<Feature<LineString>> => {
+      console.log('resource');
+      return this.trackService.getTrackGeoJson(params.track!);
     },
   });
 
