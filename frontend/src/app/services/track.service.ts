@@ -59,8 +59,13 @@ export class TrackService {
     }) as TrackNoPoints;
   }
 
-  async getSegmentMetadata(trackId: string): Promise<SegmentMetadata[]> {
-    const tracksString = await fetch(this.segmentMetadataUrl + '/' + trackId);
+  async getSegmentMetadata(
+    trackId: string,
+    abortSignal: AbortSignal | null = null,
+  ): Promise<SegmentMetadata[]> {
+    const tracksString = await fetch(this.segmentMetadataUrl + '/' + trackId, {
+      signal: abortSignal,
+    });
     const text = await tracksString.text();
     return JSON.parse(text, (key, value) => {
       if (key === 'duration') {

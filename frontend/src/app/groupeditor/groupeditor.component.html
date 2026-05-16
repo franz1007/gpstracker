@@ -1,0 +1,11 @@
+<div>
+  <label for="rename" style="margin-right: 10px">Rename Group</label>
+  <input id="rename" type="text" pInputText [(ngModel)]="groupName" placeholder="New Group Name" style="margin-right: 10px;"/>
+  <p-button label="Rename" severity="secondary" (onClick)="onGroupRename()"/>
+</div>
+
+<div>
+  <label for="new-group" style="margin-right: 10px">Create Group</label>
+  <input id="new-group" type="text" pInputText [(ngModel)]="newGroupName" placeholder="New Group Name" style="margin-right: 10px;"/>
+  <p-button label="Create" severity="secondary" (onClick)="onGroupCreate()"/>
+</div>

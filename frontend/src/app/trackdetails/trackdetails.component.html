@@ -1,4 +1,4 @@
-<p-accordion [multiple]="true" [value]="['0', '1']">
+<p-accordion [multiple]="true" [value]="['1']">
   <p-accordion-panel value="0">
     <p-accordion-header>
       Elevation/Speed
@@ -13,7 +13,8 @@
      Duration/Distance
     </p-accordion-header>
     <p-accordion-content>
-      <p-chart type="line" [data]="data" [options]="linearOptions" height="36vh"></p-chart>
+      <p-chart type="line" [data]="segmentDataset()" [options]="linearOptions" height="36vh"></p-chart>
+      <div id="map" style="height: 36vh; width: 100%;"></div>
     </p-accordion-content>
   </p-accordion-panel>
 </p-accordion>
