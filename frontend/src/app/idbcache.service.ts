@@ -166,7 +166,7 @@ export class IdbcacheService {
   }
 
   async initDB() {
-    return await openDB<MyDB>('my-db', 6, {
+    return await openDB<MyDB>('my-db', 7, {
       upgrade(db, oldVersion, newVersion, transaction, event) {
         console.log('IDB Versions: ' + oldVersion + '; ' + newVersion);
         if (oldVersion !== newVersion) {

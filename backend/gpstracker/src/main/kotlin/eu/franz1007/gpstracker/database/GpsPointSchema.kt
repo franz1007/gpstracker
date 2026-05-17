@@ -72,7 +72,6 @@ class GpsPointService(database: Database) {
                 }[Tracks.id]
             } else {
                 latest.first
-
             }
 
             val newPointGeographyId = GpsPoints.insert {
@@ -368,14 +367,14 @@ class GpsPointService(database: Database) {
     suspend fun getTrackWithDistances(trackUuid: Uuid) = dbQuery {
         val segmentDistance = GpsPoints.location.ST_Distance(
             Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
-                .orderBy(GpsPoints.timestamp, SortOrder.DESC)
+                .orderBy(GpsPoints.timestamp)
         )
         val segmentEnd =
             NotNullLag(GpsPoints.timestamp, defaultValue = GpsPoints.timestamp).over().partitionBy(GpsPoints.trackId)
-                .orderBy(GpsPoints.timestamp, SortOrder.DESC)
+                .orderBy(GpsPoints.timestamp)
         GpsPoints.innerJoin(Tracks).select(
             GpsPoints.timestamp, segmentEnd, segmentDistance,
-        ).where { Tracks.uuid eq trackUuid }.orderBy(GpsPoints.timestamp, SortOrder.DESC).map {
+        ).where { Tracks.uuid eq trackUuid }.orderBy(GpsPoints.timestamp).map {
             GpsPointSegment(it[segmentEnd].minus(it[GpsPoints.timestamp]), it[segmentDistance])
         }.let {
             if (it.isEmpty()) {
@@ -394,15 +393,15 @@ class GpsPointService(database: Database) {
     suspend fun getPointDistances(trackUuid: Uuid) = dbQuery {
         val segmentDistance = GpsPoints.location.ST_Distance(
             Lag(GpsPoints.location, defaultValue = GpsPoints.location).over().partitionBy(GpsPoints.trackId)
-                .orderBy(GpsPoints.timestamp, SortOrder.DESC)
+                .orderBy(GpsPoints.timestamp)
         ).alias("segmentDistance")
         val subquery =
             GpsPoints.select(GpsPoints.timestamp, GpsPoints.trackId, segmentDistance, GpsPoints.speed).alias("subquery")
         val totalDistance = subquery[segmentDistance].sum().over().partitionBy(subquery[GpsPoints.trackId])
-            .orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC)
+            .orderBy(subquery[GpsPoints.timestamp])
         Tracks.join(subquery, JoinType.INNER, Tracks.id, subquery[GpsPoints.trackId]).select(
             subquery[GpsPoints.timestamp], subquery[GpsPoints.speed], totalDistance
-        ).where { Tracks.uuid eq trackUuid }.orderBy(subquery[GpsPoints.timestamp], SortOrder.DESC).map {
+        ).where { Tracks.uuid eq trackUuid }.orderBy(subquery[GpsPoints.timestamp]).map {
             PointMetadata(
                 timestamp = it[subquery[GpsPoints.timestamp]],
                 distance = it[totalDistance] ?: 0.0,
