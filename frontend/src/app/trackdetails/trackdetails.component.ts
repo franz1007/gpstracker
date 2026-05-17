@@ -50,14 +50,29 @@ import * as L from 'leaflet';
 })
 export class TrackdetailsComponent implements OnInit, OnDestroy {
   trackId: InputSignal<string> = input.required<string>();
+  private map!: L.Map;
+  private currentMapFeature: L.GeoJSON = L.geoJSON(null, {
+    style: { color: 'blue' },
+  });
+
   constructor(private trackService: TrackService) {
     Chart.register(zoomPlugin);
     effect(() => {
       const id = this.trackId();
       this.setTrack(id);
     });
+    effect(() => {
+      const feature = this.trackGeoJson.value();
+      if (feature) {
+        if (this.currentMapFeature.getLayers().length > 0) {
+          this.currentMapFeature.removeLayer(0);
+        }
+        this.currentMapFeature.addData(feature);
+        this.map.fitBounds(this.currentMapFeature.getBounds());
+        console.log('Added feature to map');
+      }
+    });
   }
-  private map!: L.Map;
   private tiles = L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
@@ -112,6 +127,8 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
 
     //control.addOverlay(contoursDe, "Contours Germany")
     this.tiles.addTo(this.map);
+    this.currentMapFeature.addTo(this.map);
+    this.highlightLine.addTo(this.map);
   }
 
   ngOnDestroy() {
@@ -201,6 +218,7 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
             }),
             fill: false,
             tension: 0.4,
+            yAxisID: 'y1',
           },
           {
             label: 'Distance',
@@ -212,6 +230,7 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
             }),
             fill: false,
             tension: 0.4,
+            yAxisID: 'y',
           },
         ],
       };
@@ -229,6 +248,16 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
       x: {
         type: 'linear',
       },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+
+        // grid line settings
+        grid: {
+          drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+      },
     },
     interaction: {
       mode: 'index',
@@ -242,9 +271,26 @@ export class TrackdetailsComponent implements OnInit, OnDestroy {
       if (elements.length > 0) {
         // Assumes that both datasets have the same amount of points
         this.selectedSegment.set(elements[0].index);
+        const json = this.trackGeoJson.value();
+        if (json) {
+          this.highlightLine.setLatLngs(
+            json.geometry.coordinates
+              .slice(elements[0].index, elements[0].index + 2)
+              .map((position) => [position[1], position[0]]),
+          );
+          this.highlightLine.bringToFront();
+          console.log(this.map.hasLayer(this.highlightLine));
+          this.map.eachLayer((layer) => {
+            console.log(layer);
+          });
+          this.map.setView(this.highlightLine.getCenter());
+          console.log(this.currentMapFeature?.getLayers());
+        }
       }
     },
   };
+  private highlightLine = L.polyline([], { color: 'red' });
+
   private setTrack(trackId: string) {
     this.trackService.getTrackNoPoints(trackId).then((track) => {
       const distancePromise = this.trackService.getPointMetadata(track.uuid);
