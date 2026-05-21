@@ -1,7 +1,7 @@
 Application to receive data from osmands online tracking feature, receive it and display it as tracks on a map.
 
 ## Dependencies
-- Server: 
+- Server:
   - java runtime. Change line in service file according to your environment.
   - nginx to avoid running application as root
 
@@ -20,3 +20,17 @@ set env variable DEPLOY_SERVER to your host
 Execute deploy.sh
 
 Tis will first build and then deploy both front- and backend
+
+
+## Development
+
+### Frontend
+
+To develop mostly isolated in docker, run
+´´´
+docker compose run --rm npm install
+docker compose run --rm npm run ng serve
+´´´
+
+npm install only needs to be run once, or when dependencies changed.
+

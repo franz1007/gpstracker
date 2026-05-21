@@ -1,0 +1,6 @@
+FROM node:26.1.0
+
+WORKDIR /app
+EXPOSE 4200 4200
+
+ENTRYPOINT [ ]
