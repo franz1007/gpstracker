@@ -209,8 +209,10 @@ class GpsPointService(database: Database) {
     suspend fun splitTrackAfterPoint(trackUuid: Uuid, afterPoint: Int): Pair<TrackNoPoints, TrackNoPoints>? = dbQuery {
         Tracks.selectAll().where { Tracks.uuid eq trackUuid }.singleOrNull()?.let { oldTrack ->
 
-            val pointCount = GpsPoints.select(GpsPoints.id.count()).where { GpsPoints.trackId eq oldTrack[Tracks.id] }.single().let { it[GpsPoints.id.count()] }
-            if(afterPoint >= pointCount){
+            val pointCount =
+                GpsPoints.select(GpsPoints.id.count()).where { GpsPoints.trackId eq oldTrack[Tracks.id] }.single()
+                    .let { it[GpsPoints.id.count()] }
+            if (afterPoint >= pointCount) {
                 throw IllegalArgumentException("This track only has $pointCount points. Can not cut after point $afterPoint")
             }
 
@@ -375,7 +377,7 @@ class GpsPointService(database: Database) {
         GpsPoints.innerJoin(Tracks).select(
             GpsPoints.timestamp, segmentEnd, segmentDistance,
         ).where { Tracks.uuid eq trackUuid }.orderBy(GpsPoints.timestamp).map {
-            GpsPointSegment(it[segmentEnd].minus(it[GpsPoints.timestamp]), it[segmentDistance])
+            GpsPointSegment(it[GpsPoints.timestamp].minus(it[segmentEnd]), it[segmentDistance])
         }.let {
             if (it.isEmpty()) {
                 null
