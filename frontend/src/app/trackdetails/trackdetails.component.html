@@ -1,10 +1,10 @@
-<p-accordion [multiple]="true" [value]="['1']">
+<p-accordion [multiple]="true" [value]="['1','2']">
   <p-accordion-panel value="0">
     <p-accordion-header>
       Elevation/Speed
     </p-accordion-header>
     <p-accordion-content>
-      <p-chart type="line" [data]="elevationData" [options]="elevationOptions" height="36vh"></p-chart>
+      <p-chart type="line" [data]="elevationData()" [options]="elevationOptions" height="36vh"></p-chart>
     </p-accordion-content>
   </p-accordion-panel>
 
@@ -14,6 +14,13 @@
     </p-accordion-header>
     <p-accordion-content>
       <p-chart type="line" [data]="segmentDataset()" [options]="linearOptions" height="36vh"></p-chart>
+    </p-accordion-content>
+  </p-accordion-panel>
+  <p-accordion-panel value="2">
+    <p-accordion-header>
+      Map
+    </p-accordion-header>
+    <p-accordion-content>
       <app-segmentmap [(trackGeoJson)]="trackGeoJson.value" [(selectedSegment)]="selectedSegment"/>
     </p-accordion-content>
   </p-accordion-panel>

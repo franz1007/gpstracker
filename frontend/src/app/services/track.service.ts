@@ -240,7 +240,6 @@ export class TrackService {
     return fetch(this.trackMetadataUrl + '/' + trackId, {
       signal: abortSignal,
     }).then(async (response) => {
-      // Todo abortsignal
       return response.text().then((text) => {
         const track = JSON.parse(text, (key, value) => {
           if (

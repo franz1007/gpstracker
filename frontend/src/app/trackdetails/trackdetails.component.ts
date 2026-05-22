@@ -34,7 +34,12 @@ import {
   AccordionPanel,
 } from 'primeng/accordion';
 import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
-import { SegmentMetadata, TrackNoPoints } from '../tracker/map/trackNoPoints';
+import {
+  PointMetadata,
+  SegmentMetadata,
+  TrackMetadata,
+  TrackNoPoints,
+} from '../tracker/map/trackNoPoints';
 import { SegmentmapComponent } from './segmentmap/segmentmap.component';
 
 @Component({
@@ -61,7 +66,6 @@ export class TrackdetailsComponent {
       const id = this.trackId();
       this.selectedSegment.set(-1);
       this.clickedSegment.set(-1);
-      this.setTrack(id);
     });
   }
 
@@ -83,9 +87,48 @@ export class TrackdetailsComponent {
       x: { min: 'original', max: 'original' },
     },
   };
-  elevationData: ChartData = {
-    datasets: [],
-  };
+  elevationData: Signal<ChartData> = linkedSignal(() => {
+    const metadata = this.pointMetadata.value();
+    const geoJson = this.trackGeoJson.value();
+    if (metadata && geoJson) {
+      const heights = geoJson.geometry.coordinates.map((coord, index) => {
+        return {
+          x: metadata[index].distance,
+          y: coord[2],
+        };
+      });
+      const speeds = metadata
+        .filter((m) => m.speed > 0)
+        .map((metadata) => {
+          return {
+            x: metadata.distance,
+            y: metadata.speed * 3.6,
+          };
+        });
+      return {
+        datasets: [
+          {
+            label: 'Elevation',
+            data: heights,
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Speed',
+            data: speeds,
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y1',
+          },
+        ],
+      };
+    } else {
+      return {
+        datasets: [],
+      };
+    }
+  });
   elevationOptions: ChartOptions = {
     scales: {
       x: {
@@ -102,8 +145,26 @@ export class TrackdetailsComponent {
         },
       },
     },
+    interaction: {
+      mode: 'index',
+      axis: 'x',
+      intersect: false,
+    },
     plugins: {
       zoom: this.zoomOptions,
+    },
+    // Does not quite work. These datasets have points instead of segments.
+    onHover: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
+      if (elements.length > 0) {
+        // Assumes that both datasets have the same amount of points
+        this.selectedSegment.set(elements[0].index);
+      }
+    },
+    onClick: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
+      console.log(elements[0].index);
+      if (elements.length > 0) {
+        this.clickedSegment.set(elements[0].index);
+      }
     },
   };
 
@@ -125,6 +186,13 @@ export class TrackdetailsComponent {
     loader: ({ params, abortSignal }): Promise<Feature<LineString>> => {
       console.log('resource');
       return this.trackService.getTrackGeoJson(params.track!);
+    },
+  });
+  pointMetadata = resource({
+    params: () => ({ track: this.trackNoPoints.value() }),
+    loader: ({ params, abortSignal }): Promise<PointMetadata[]> => {
+      console.log('resource');
+      return this.trackService.getPointMetadata(params.track!.uuid);
     },
   });
 
@@ -222,46 +290,4 @@ export class TrackdetailsComponent {
       }
     },
   };
-
-  private setTrack(trackId: string) {
-    this.trackService.getTrackNoPoints(trackId).then((track) => {
-      const distancePromise = this.trackService.getPointMetadata(track.uuid);
-      const geoJsonPromise = this.trackService.getTrackGeoJson(track);
-      Promise.all([distancePromise, geoJsonPromise]).then((result) => {
-        const pointMedatada = result[0];
-        const heights = result[1].geometry.coordinates.map((coord, index) => {
-          return {
-            x: pointMedatada[index].distance,
-            y: coord[2],
-          };
-        });
-        const speeds = pointMedatada
-          .filter((metadata) => metadata.speed > 0)
-          .map((metadata) => {
-            return {
-              x: metadata.distance,
-              y: metadata.speed * 3.6,
-            };
-          });
-        this.elevationData = {
-          datasets: [
-            {
-              label: 'Elevation',
-              data: heights,
-              fill: false,
-              tension: 0.4,
-              yAxisID: 'y',
-            },
-            {
-              label: 'Speed',
-              data: speeds,
-              fill: false,
-              tension: 0.4,
-              yAxisID: 'y1',
-            },
-          ],
-        };
-      });
-    });
-  }
 }
