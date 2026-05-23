@@ -31,6 +31,7 @@ export class TrackService {
   pointMetadataUrl: string = environment.apiUrl + '/api/tracks/pointMetadata';
   groupsUrl: string = environment.apiUrl + '/api/groups';
   updateGroupUrl: string = environment.apiUrl + '/api/tracks/updateGroup';
+  splitTrackUrl: string = environment.apiUrl + '/api/tracks/splitTrack';
 
   constructor(
     private http: HttpClient,
@@ -344,5 +345,35 @@ export class TrackService {
         console.log('CategorizeTrack failed: ' + reason);
         return null;
       });
+  }
+  async splitTrack(
+    trackUuid: string,
+    afterPointIndex: number,
+  ): Promise<[TrackNoPoints, TrackNoPoints]> {
+    const params = new HttpParams().set('segmentPosition', afterPointIndex);
+    return await firstValueFrom(
+      this.http.post(this.splitTrackUrl + '/' + trackUuid, null, {
+        responseType: 'text',
+        params: params,
+      }),
+    ).then((text) => {
+      console.log(text);
+      const track = JSON.parse(text, (key, value) => {
+        if (
+          key === 'eta' ||
+          key === 'etfa' ||
+          key === 'timestamp' ||
+          key === 'startTimestamp' ||
+          key === 'endTimestamp'
+        ) {
+          return Instant.parse(value);
+        } else {
+          return value;
+        }
+      }) as [TrackNoPoints, TrackNoPoints];
+      console.log(track);
+      console.log(track[0].startTimestamp);
+      return track;
+    });
   }
 }

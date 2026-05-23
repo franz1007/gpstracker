@@ -14,6 +14,7 @@
     </p-accordion-header>
     <p-accordion-content>
       <p-chart type="line" [data]="segmentDataset()" [options]="linearOptions" height="36vh"></p-chart>
+      <p-button label="Split at this Point" severity="secondary" (onClick)="onSplitTrack()"/>
     </p-accordion-content>
   </p-accordion-panel>
   <p-accordion-panel value="2">

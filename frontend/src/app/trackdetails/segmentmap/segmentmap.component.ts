@@ -40,17 +40,24 @@ export class SegmentmapComponent implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const feature = this.trackGeoJson();
+      console.log('Segmentmap: new geoJson');
       if (feature) {
-        if (this.currentMapFeature.getLayers().length > 0) {
-          this.currentMapFeature.removeLayer(0);
+        if (this.map.hasLayer(this.currentMapFeature)) {
+          console.log('Map already had Feature, removing');
+          this.currentMapFeature.removeFrom(this.map);
         }
+        this.currentMapFeature = L.geoJSON(null, {
+          style: { color: 'blue' },
+        });
         this.currentMapFeature.addData(feature);
+        this.map.addLayer(this.currentMapFeature);
         this.map.fitBounds(this.currentMapFeature.getBounds());
         console.log('Added feature to map');
       }
     });
 
     effect(() => {
+      console.log('Segmentmap new Track or selectedSegment');
       const index = this.selectedSegment();
       const json = this.trackGeoJson();
       if (json) {

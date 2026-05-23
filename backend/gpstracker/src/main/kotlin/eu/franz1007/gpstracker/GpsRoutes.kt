@@ -220,7 +220,7 @@ fun Application.configureGpsRoutes(gpsPointService: GpsPointService) {
                     if (tracks == null) {
                         call.respond(HttpStatusCode.BadRequest, "No track or group available with this uuid")
                     } else {
-                        call.respond(tracks)
+                        call.respond(tracks.toList())
                     }
                 }
 

@@ -4,6 +4,8 @@ import {
   input,
   InputSignal,
   linkedSignal,
+  model,
+  ModelSignal,
   OnDestroy,
   OnInit,
   resource,
@@ -15,6 +17,7 @@ import { UIChart } from 'primeng/chart';
 import { TrackService } from '../services/track.service';
 import { RouterLink } from '@angular/router';
 import { Feature, LineString, Position } from 'geojson';
+import { ButtonModule } from 'primeng/button';
 import {
   ActiveElement,
   Chart,
@@ -52,17 +55,19 @@ import { SegmentmapComponent } from './segmentmap/segmentmap.component';
     AccordionContent,
     Accordion,
     SegmentmapComponent,
+    ButtonModule,
   ],
   templateUrl: './trackdetails.component.html',
   styleUrl: './trackdetails.component.css',
 })
 export class TrackdetailsComponent {
-  trackId: InputSignal<string> = input.required<string>();
+  trackId: ModelSignal<string> = model.required<string>();
 
   constructor(private trackService: TrackService) {
     Chart.register(this.myPlugin);
     Chart.register(zoomPlugin);
     effect(() => {
+      console.log('TrackId effect');
       const id = this.trackId();
       this.selectedSegment.set(-1);
       this.clickedSegment.set(-1);
@@ -184,14 +189,14 @@ export class TrackdetailsComponent {
   trackGeoJson = resource({
     params: () => ({ track: this.trackNoPoints.value() }),
     loader: ({ params, abortSignal }): Promise<Feature<LineString>> => {
-      console.log('resource');
+      console.log('getting TrackGeoJson resource');
       return this.trackService.getTrackGeoJson(params.track!);
     },
   });
   pointMetadata = resource({
     params: () => ({ track: this.trackNoPoints.value() }),
     loader: ({ params, abortSignal }): Promise<PointMetadata[]> => {
-      console.log('resource');
+      console.log('getting pointMetadata resource');
       return this.trackService.getPointMetadata(params.track!.uuid);
     },
   });
@@ -290,4 +295,20 @@ export class TrackdetailsComponent {
       }
     },
   };
+
+  onSplitTrack() {
+    console.log('Should split');
+    const segment = this.clickedSegment();
+    if (segment > 0) {
+      this.trackService.splitTrack(this.trackId(), segment).then((result) => {
+        this.trackId.set(result[0].uuid);
+        history.replaceState(
+          null,
+          '',
+          new URL(result[0].uuid, window.location.href).href,
+        );
+        console.log('new Trackid: ' + this.trackId());
+      });
+    }
+  }
 }
