@@ -300,15 +300,17 @@ export class TrackdetailsComponent {
     console.log('Should split');
     const segment = this.clickedSegment();
     if (segment > 0) {
-      this.trackService.splitTrack(this.trackId(), segment).then((result) => {
-        this.trackId.set(result[0].uuid);
-        history.replaceState(
-          null,
-          '',
-          new URL(result[0].uuid, window.location.href).href,
-        );
-        console.log('new Trackid: ' + this.trackId());
-      });
+      this.trackService
+        .splitTrack(this.trackId(), segment + 1)
+        .then((result) => {
+          this.trackId.set(result[0].uuid);
+          history.replaceState(
+            null,
+            '',
+            new URL(result[0].uuid, window.location.href).href,
+          );
+          console.log('new Trackid: ' + this.trackId());
+        });
     }
   }
 }
