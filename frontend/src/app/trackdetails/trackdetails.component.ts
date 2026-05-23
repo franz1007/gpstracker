@@ -299,7 +299,7 @@ export class TrackdetailsComponent {
   onSplitTrack() {
     console.log('Should split');
     const segment = this.clickedSegment();
-    if (segment > 0) {
+    if (segment >= 0) {
       this.trackService
         .splitTrack(this.trackId(), segment + 1)
         .then((result) => {
