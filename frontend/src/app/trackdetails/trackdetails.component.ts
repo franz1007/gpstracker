@@ -200,6 +200,65 @@ export class TrackdetailsComponent {
       return this.trackService.getPointMetadata(params.track!.uuid);
     },
   });
+  naviTracks = resource({
+    params: () => ({ id: this.trackId() }),
+    loader: ({
+      params,
+      abortSignal,
+    }): Promise<[TrackNoPoints, TrackNoPoints]> => {
+      return this.trackService.getAllTracks(abortSignal).then((tracks) => {
+        const sorted = tracks.sort((t1, t2) => {
+          const g1 = t1.group?.name;
+          const g2 = t2.group?.name;
+          if (g1 === g2) {
+            return t1.startTimestamp.compareTo(t2.startTimestamp);
+          } else {
+            if (g1 === undefined) {
+              return 1;
+            } else if (g2 === undefined) {
+              return -1;
+            } else {
+              return g1.localeCompare(g2);
+            }
+          }
+        });
+        console.log('sorted');
+        console.log(params.id);
+        console.log(sorted);
+        const currentIndex = tracks.findIndex((value) => {
+          return value.uuid === params.id;
+        });
+        console.log(currentIndex);
+        if (currentIndex === tracks.length - 1) {
+          return [tracks[currentIndex - 1], tracks[0]];
+        } else {
+          if (currentIndex === 0) {
+            return [tracks[tracks.length - 1], tracks[currentIndex + 1]];
+          } else {
+            return [tracks[currentIndex - 1], tracks[currentIndex + 1]];
+          }
+        }
+      });
+    },
+  }).asReadonly();
+  nextTrack = linkedSignal(() => {
+    const tracks = this.naviTracks.value();
+    if (tracks) {
+      const [_, track] = tracks;
+      return new TrackTodo(track.uuid, 'Next', ['/details', track.uuid]);
+    } else {
+      return null;
+    }
+  });
+  previousTrack = linkedSignal(() => {
+    const tracks = this.naviTracks.value();
+    if (tracks) {
+      const [track, _] = tracks;
+      return new TrackTodo(track.uuid, 'Previous', ['/details', track.uuid]);
+    } else {
+      return null;
+    }
+  });
 
   segmentDataset: Signal<ChartData> = linkedSignal(() => {
     console.log('LinkedSignal:');
@@ -312,5 +371,15 @@ export class TrackdetailsComponent {
           console.log('new Trackid: ' + this.trackId());
         });
     }
+  }
+}
+class TrackTodo {
+  uuid: string;
+  text: string;
+  link: string[];
+  constructor(uuid: string, text: string, link: string[]) {
+    this.uuid = uuid;
+    this.text = text;
+    this.link = link;
   }
 }

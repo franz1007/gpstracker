@@ -30,3 +30,13 @@
   <span class="pi pi-map-marker"></span>
   Show on map
 </a>
+<div class='center'>
+  <a [routerLink]="previousTrack()?.link" class="bottom-right" pButton>
+    {{ previousTrack()?.text ?? "No Todos left" }}
+  </a>
+  <div style="width: 10vw;">
+  </div>
+  <a [routerLink]="nextTrack()?.link" class="bottom-right" pButton>
+    {{ nextTrack()?.text ?? "No Todos left" }}
+  </a>
+</div>
