@@ -63,6 +63,14 @@
             {{ trackMetadata.value()?.startTimestampString ?? "Not available"}}
           </td>
         </tr>
+        <tr>
+          <td>
+            Group:
+          </td>
+          <td style="padding-left: 3em; text-align: right;">
+            {{ trackMetadata.value()?.group?.name ?? "Not available"}}
+          </td>
+        </tr>
       </table>
       <app-segmentmap [(trackGeoJson)]="trackGeoJson.value" [(selectedSegment)]="selectedSegment"/>
     </p-accordion-content>
