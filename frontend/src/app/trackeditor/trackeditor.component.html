@@ -17,6 +17,10 @@
     <p-button label="Create" severity="secondary" (onClick)="onGroupCreate()"/>
   </div>
   <app-map id="map" [showTrackMode]="mapTrack()" zoomKey="editor"></app-map>
+  <a [routerLink]="['/details', trackId()]">
+    <span class="pi pi-chart-line"></span>
+    Details
+  </a>
   <a [routerLink]="nextTodo.value()?.link" class="bottom-right" pButton>
     {{ nextTodo.value()?.text ?? "No Todos left" }}
   </a>

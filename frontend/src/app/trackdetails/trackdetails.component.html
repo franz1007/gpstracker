@@ -1,4 +1,4 @@
-<p-accordion [multiple]="true" [value]="['1','2']">
+<p-accordion [multiple]="true" [value]="['0','2']">
   <p-accordion-panel value="0">
     <p-accordion-header>
       Elevation/Speed
@@ -25,10 +25,56 @@
       <app-segmentmap [(trackGeoJson)]="trackGeoJson.value" [(selectedSegment)]="selectedSegment"/>
     </p-accordion-content>
   </p-accordion-panel>
+  <p-accordion-panel value="3">
+    <p-accordion-header>
+      Stats
+    </p-accordion-header>
+    <p-accordion-content>
+      <table>
+        <tr>
+          <td>
+            Distance:
+          </td>
+          <td style="padding-left: 3em; text-align: right;">
+            {{ (trackMetadata.value()?.distanceMeters?.toLocaleString() ?? "Not available") + " Meters"}}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Duration:
+          </td>
+          <td style="padding-left: 3em; text-align: right;">
+            {{ trackMetadata.value()?.durationString }}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Average Speed:
+          </td>
+          <td style="padding-left: 3em; text-align: right;">
+            {{ (trackMetadata.value()?.averageSpeedKph?.toFixed(4)?? "Not available") + " kph"}}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Start:
+          </td>
+          <td style="padding-left: 3em; text-align: right;">
+            {{ trackMetadata.value()?.startTimestampString ?? "Not available"}}
+          </td>
+        </tr>
+      </table>
+      <app-segmentmap [(trackGeoJson)]="trackGeoJson.value" [(selectedSegment)]="selectedSegment"/>
+    </p-accordion-content>
+  </p-accordion-panel>
 </p-accordion>
 <a [routerLink]="['/map', trackId()]">
   <span class="pi pi-map-marker"></span>
   Show on map
+</a>
+<a [routerLink]="['/edit', trackId()]" style="margin-left: 5vw;">
+  <span class="pi pi-pencil"></span>
+  Edit
 </a>
 <div class='center'>
   <a [routerLink]="previousTrack()?.link" class="bottom-right" pButton>

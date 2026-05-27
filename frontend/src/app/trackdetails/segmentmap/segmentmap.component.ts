@@ -60,7 +60,7 @@ export class SegmentmapComponent implements OnInit, OnDestroy {
       console.log('Segmentmap new Track or selectedSegment');
       const index = this.selectedSegment();
       const json = this.trackGeoJson();
-      if (json) {
+      if (json && index > -1) {
         this.highlightLine.setLatLngs(
           json.geometry.coordinates
             .slice(index, index + 2)
@@ -73,7 +73,7 @@ export class SegmentmapComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.map = L.map('map', {
+    this.map = L.map('segment-map', {
       center: [49.45421, 11.07752], //Nuremberg
       zoom: 5,
       zoomControl: false,

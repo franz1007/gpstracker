@@ -255,8 +255,17 @@ export class TrackService {
             return value;
           }
         }) as TrackMetadata;
-        this.idbService.storeMetadata(track.uuid, track);
-        return track;
+        const metadata = new TrackMetadata(
+          track.uuid,
+          track.startTimestamp,
+          track.endTimestamp,
+          track.category,
+          track.distanceMeters,
+          track.averageSpeedKph,
+          track.group,
+        );
+        this.idbService.storeMetadata(metadata.uuid, metadata);
+        return metadata;
       });
     });
   }

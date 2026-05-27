@@ -200,6 +200,20 @@ export class TrackdetailsComponent {
       return this.trackService.getPointMetadata(params.track!.uuid);
     },
   });
+  trackMetadata = resource({
+    params: () => ({ id: this.trackId() }),
+    loader: ({ params, abortSignal }): Promise<TrackMetadata | null> => {
+      const metadata = this.trackService.getTrackMetadata(
+        params.id,
+        abortSignal,
+      );
+      return metadata.then((metadata) => {
+        console.log('metadata:');
+        console.log(metadata);
+        return metadata;
+      });
+    },
+  });
   naviTracks = resource({
     params: () => ({ id: this.trackId() }),
     loader: ({
