@@ -274,87 +274,9 @@ export class TrackdetailsComponent {
     }
   });
 
-  segmentDataset: Signal<ChartData> = linkedSignal(() => {
-    console.log('LinkedSignal:');
-    console.log(this.trackSegments);
-    const segmentData = this.trackSegments.value();
-    if (segmentData) {
-      return {
-        datasets: [
-          {
-            label: 'Duration',
-            data: segmentData.map((value, index) => {
-              return {
-                x: index,
-                y: value.duration.seconds(),
-              };
-            }),
-            fill: false,
-            tension: 0.4,
-            yAxisID: 'y1',
-          },
-          {
-            label: 'Distance',
-            data: segmentData.map((value, index) => {
-              return {
-                x: index,
-                y: value.distance,
-              };
-            }),
-            fill: false,
-            tension: 0.4,
-            yAxisID: 'y',
-          },
-        ],
-      };
-    } else {
-      return {
-        datasets: [],
-      };
-    }
-  });
-
   selectedSegment: WritableSignal<number> = signal(-1);
 
   clickedSegment: WritableSignal<number> = signal(-1);
-
-  linearOptions: ChartOptions = {
-    scales: {
-      x: {
-        type: 'linear',
-      },
-      y1: {
-        type: 'linear',
-        display: true,
-        position: 'right',
-
-        // grid line settings
-        grid: {
-          drawOnChartArea: false, // only want the grid lines for one axis to show up
-        },
-      },
-    },
-    interaction: {
-      mode: 'index',
-      axis: 'x',
-      intersect: false,
-    },
-    plugins: {
-      zoom: this.zoomOptions,
-    },
-    onHover: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
-      if (elements.length > 0) {
-        // Assumes that both datasets have the same amount of points
-        this.selectedSegment.set(elements[0].index);
-      }
-    },
-    onClick: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
-      console.log(elements[0].index);
-      if (elements.length > 0) {
-        this.clickedSegment.set(elements[0].index);
-      }
-    },
-  };
 
   myPlugin: Plugin = {
     id: 'leaveinterceptor',
@@ -368,24 +290,6 @@ export class TrackdetailsComponent {
       }
     },
   };
-
-  onSplitTrack() {
-    console.log('Should split');
-    const segment = this.clickedSegment();
-    if (segment >= 0) {
-      this.trackService
-        .splitTrack(this.trackId(), segment + 1)
-        .then((result) => {
-          this.trackId.set(result[0].uuid);
-          history.replaceState(
-            null,
-            '',
-            new URL(result[0].uuid, window.location.href).href,
-          );
-          console.log('new Trackid: ' + this.trackId());
-        });
-    }
-  }
 }
 class TrackTodo {
   uuid: string;

@@ -1,74 +1,63 @@
-<p-accordion [multiple]="true" [value]="['0','2']">
+<p-accordion [multiple]="true" [value]="['0', '2']">
   <p-accordion-panel value="0">
-    <p-accordion-header>
-      Elevation/Speed
-    </p-accordion-header>
+    <p-accordion-header> Elevation/Speed </p-accordion-header>
     <p-accordion-content>
-      <p-chart type="line" [data]="elevationData()" [options]="elevationOptions" height="36vh"></p-chart>
+      <p-chart
+        type="line"
+        [data]="elevationData()"
+        [options]="elevationOptions"
+        height="36vh"
+      ></p-chart>
     </p-accordion-content>
   </p-accordion-panel>
 
-  <p-accordion-panel value="1">
-    <p-accordion-header>
-     Duration/Distance
-    </p-accordion-header>
-    <p-accordion-content>
-      <p-chart type="line" [data]="segmentDataset()" [options]="linearOptions" height="36vh"></p-chart>
-      <p-button label="Split at this Point" severity="secondary" (onClick)="onSplitTrack()"/>
-    </p-accordion-content>
-  </p-accordion-panel>
   <p-accordion-panel value="2">
-    <p-accordion-header>
-      Map
-    </p-accordion-header>
+    <p-accordion-header> Map </p-accordion-header>
     <p-accordion-content>
-      <app-segmentmap [(trackGeoJson)]="trackGeoJson.value" [(selectedSegment)]="selectedSegment"/>
+      <app-segmentmap
+        [(trackGeoJson)]="trackGeoJson.value"
+        [(selectedSegment)]="selectedSegment"
+      />
     </p-accordion-content>
   </p-accordion-panel>
   <p-accordion-panel value="3">
-    <p-accordion-header>
-      Stats
-    </p-accordion-header>
+    <p-accordion-header> Stats </p-accordion-header>
     <p-accordion-content>
       <table>
         <tr>
-          <td>
-            Distance:
-          </td>
-          <td style="padding-left: 3em; text-align: right;">
-            {{ (trackMetadata.value()?.distanceMeters?.toLocaleString() ?? "Not available") + " Meters"}}
+          <td>Distance:</td>
+          <td style="padding-left: 3em; text-align: right">
+            {{
+              (trackMetadata.value()?.distanceMeters?.toLocaleString() ??
+                "Not available") + " Meters"
+            }}
           </td>
         </tr>
         <tr>
-          <td>
-            Duration:
-          </td>
-          <td style="padding-left: 3em; text-align: right;">
+          <td>Duration:</td>
+          <td style="padding-left: 3em; text-align: right">
             {{ trackMetadata.value()?.durationString }}
           </td>
         </tr>
         <tr>
-          <td>
-            Average Speed:
-          </td>
-          <td style="padding-left: 3em; text-align: right;">
-            {{ (trackMetadata.value()?.averageSpeedKph?.toFixed(4)?? "Not available") + " kph"}}
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Start:
-          </td>
-          <td style="padding-left: 3em; text-align: right;">
-            {{ trackMetadata.value()?.startTimestampString ?? "Not available"}}
+          <td>Average Speed:</td>
+          <td style="padding-left: 3em; text-align: right">
+            {{
+              (trackMetadata.value()?.averageSpeedKph?.toFixed(4) ??
+                "Not available") + " kph"
+            }}
           </td>
         </tr>
         <tr>
-          <td>
-            Group:
+          <td>Start:</td>
+          <td style="padding-left: 3em; text-align: right">
+            {{ trackMetadata.value()?.startTimestampString ?? "Not available" }}
           </td>
-          <td style="padding-left: 3em; text-align: right;">
-            {{ trackMetadata.value()?.group?.name ?? "Not available"}}
+        </tr>
+        <tr>
+          <td>Group:</td>
+          <td style="padding-left: 3em; text-align: right">
+            {{ trackMetadata.value()?.group?.name ?? "Not available" }}
           </td>
         </tr>
       </table>
@@ -79,16 +68,15 @@
   <span class="pi pi-map-marker"></span>
   Show on map
 </a>
-<a [routerLink]="['/edit', trackId()]" style="margin-left: 5vw;">
+<a [routerLink]="['/edit', trackId()]" style="margin-left: 5vw">
   <span class="pi pi-pencil"></span>
   Edit
 </a>
-<div class='center'>
+<div class="center">
   <a [routerLink]="previousTrack()?.link" class="bottom-right" pButton>
     {{ previousTrack()?.text ?? "No Todos left" }}
   </a>
-  <div style="width: 10vw;">
-  </div>
+  <div style="width: 10vw"></div>
   <a [routerLink]="nextTrack()?.link" class="bottom-right" pButton>
     {{ nextTrack()?.text ?? "No Todos left" }}
   </a>

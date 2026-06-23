@@ -11,20 +11,41 @@ import {
   WritableSignal,
 } from '@angular/core';
 import {
+  SegmentMetadata,
   TrackGroup,
   TrackMetadata,
   TrackNoPoints,
 } from '../tracker/map/trackNoPoints';
 import { TrackService } from '../services/track.service';
-import { MapComponent } from '../tracker/map/map.component';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { RouterLink } from '@angular/router';
-
+import { SegmentmapComponent } from '../trackdetails/segmentmap/segmentmap.component';
+import { Feature, LineString, Position } from 'geojson';
+import { UIChart } from 'primeng/chart';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import {
+  ActiveElement,
+  Chart,
+  ChartData,
+  ChartEvent,
+  ChartOptions,
+  ChartType,
+  Plugin,
+  plugins,
+} from 'chart.js';
+import { ZoomPluginOptions } from 'chartjs-plugin-zoom/types/options';
 @Component({
   selector: 'app-trackeditor',
-  imports: [MapComponent, SelectModule, FormsModule, ButtonModule, RouterLink],
+  imports: [
+    UIChart,
+    SelectModule,
+    FormsModule,
+    ButtonModule,
+    RouterLink,
+    SegmentmapComponent,
+  ],
   templateUrl: './trackeditor.component.html',
   styleUrl: './trackeditor.component.css',
 })
@@ -40,6 +61,134 @@ export class TrackeditorComponent {
       return promise;
     },
   }).asReadonly();
+
+  trackGeoJson = resource({
+    params: () => ({ track: this.track.value() }),
+    loader: ({ params, abortSignal }): Promise<Feature<LineString>> => {
+      console.log('getting TrackGeoJson resource');
+      return this.trackService.getTrackGeoJson(params.track!);
+    },
+  });
+
+  trackSegments = resource({
+    params: () => ({ id: this.trackId() }),
+    loader: ({ params, abortSignal }): Promise<SegmentMetadata[] | null> => {
+      return this.trackService.getSegmentMetadata(params.id, abortSignal);
+    },
+  });
+
+  segmentDataset: Signal<ChartData> = linkedSignal(() => {
+    console.log('LinkedSignal:');
+    console.log(this.trackSegments);
+    const segmentData = this.trackSegments.value();
+    if (segmentData) {
+      return {
+        datasets: [
+          {
+            label: 'Duration',
+            data: segmentData.map((value, index) => {
+              return {
+                x: index,
+                y: value.duration.seconds(),
+              };
+            }),
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y1',
+          },
+          {
+            label: 'Distance',
+            data: segmentData.map((value, index) => {
+              return {
+                x: index,
+                y: value.distance,
+              };
+            }),
+            fill: false,
+            tension: 0.4,
+            yAxisID: 'y',
+          },
+        ],
+      };
+    } else {
+      return {
+        datasets: [],
+      };
+    }
+  });
+
+  selectedSegment: WritableSignal<number> = signal(-1);
+
+  clickedSegment: WritableSignal<number> = signal(-1);
+
+  myPlugin: Plugin = {
+    id: 'leaveinterceptor',
+    beforeEvent: (chart, args, pluginOptions) => {
+      const event = args.event;
+      if (event.type === 'mouseout') {
+        console.log('mouseout');
+        const clicked = this.clickedSegment();
+        if (clicked !== -1) this.selectedSegment.set(clicked);
+        // process the event
+      }
+    },
+  };
+  private zoomOptions: ZoomPluginOptions = {
+    zoom: {
+      wheel: {
+        enabled: true,
+      },
+      pinch: {
+        enabled: true,
+      },
+      mode: 'x',
+    },
+    pan: {
+      enabled: true,
+      mode: 'x',
+    },
+    limits: {
+      x: { min: 'original', max: 'original' },
+    },
+  };
+
+  linearOptions: ChartOptions = {
+    scales: {
+      x: {
+        type: 'linear',
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+
+        // grid line settings
+        grid: {
+          drawOnChartArea: false, // only want the grid lines for one axis to show up
+        },
+      },
+    },
+    interaction: {
+      mode: 'index',
+      axis: 'x',
+      intersect: false,
+    },
+    plugins: {
+      zoom: this.zoomOptions,
+    },
+    onHover: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
+      if (elements.length > 0) {
+        // Assumes that both datasets have the same amount of points
+        this.selectedSegment.set(elements[0].index);
+      }
+    },
+    onClick: (event: ChartEvent, elements: ActiveElement[], chart: Chart) => {
+      console.log(elements[0].index);
+      if (elements.length > 0) {
+        this.clickedSegment.set(elements[0].index);
+      }
+    },
+  };
 
   nextTodo = resource({
     params: () => ({ id: this.trackId() }),
@@ -84,6 +233,8 @@ export class TrackeditorComponent {
   });
 
   constructor(private trackService: TrackService) {
+    Chart.register(this.myPlugin);
+    Chart.register(zoomPlugin);
     trackService.getTrackCategories().then((result) => {
       this.categories = result;
     });
@@ -158,6 +309,24 @@ export class TrackeditorComponent {
       this.trackService.createGroup(newName).then((result) => {
         this.groups.update((oldValue) => [result, ...oldValue]);
       });
+    }
+  }
+
+  onSplitTrack() {
+    console.log('Should split');
+    const segment = this.clickedSegment();
+    if (segment >= 0) {
+      this.trackService
+        .splitTrack(this.trackId(), segment + 1)
+        .then((result) => {
+          this.trackId.set(result[0].uuid);
+          history.replaceState(
+            null,
+            '',
+            new URL(result[0].uuid, window.location.href).href,
+          );
+          console.log('new Trackid: ' + this.trackId());
+        });
     }
   }
 }

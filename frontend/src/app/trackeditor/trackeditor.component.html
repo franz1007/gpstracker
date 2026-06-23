@@ -1,22 +1,49 @@
 <div class="container">
   <div>
-    <label>
-      Category
-    </label>
-    <p-select [options]="categories" appendTo="body" [ngModel]="track.value()?.category" (onChange)="onCategoryChange($event.value)" />
+    <label> Category </label>
+    <p-select
+      [options]="categories"
+      appendTo="body"
+      [ngModel]="track.value()?.category"
+      (onChange)="onCategoryChange($event.value)"
+    />
   </div>
   <div>
-    <label>
-      Group
-    </label>
-    <p-select [options]="groupNames()" appendTo="body" [ngModel]="track.value()?.group?.name" (onChange)="onGroupChange($event.value)" />
+    <label> Group </label>
+    <p-select
+      [options]="groupNames()"
+      appendTo="body"
+      [ngModel]="track.value()?.group?.name"
+      (onChange)="onGroupChange($event.value)"
+    />
   </div>
   <div>
     <label for="new-group" style="margin-right: 10px">Create Group</label>
-    <input id="new-group" type="text" pInputText [(ngModel)]="newGroupName" placeholder="New Group Name" style="margin-right: 10px;"/>
-    <p-button label="Create" severity="secondary" (onClick)="onGroupCreate()"/>
+    <input
+      id="new-group"
+      type="text"
+      pInputText
+      [(ngModel)]="newGroupName"
+      placeholder="New Group Name"
+      style="margin-right: 10px"
+    />
+    <p-button label="Create" severity="secondary" (onClick)="onGroupCreate()" />
   </div>
-  <app-map id="map" [showTrackMode]="mapTrack()" zoomKey="editor"></app-map>
+  <p-chart
+    type="line"
+    [data]="segmentDataset()"
+    [options]="linearOptions"
+    height="36vh"
+  ></p-chart>
+  <p-button
+    label="Split at this Point"
+    severity="secondary"
+    (onClick)="onSplitTrack()"
+  />
+  <app-segmentmap
+    [(trackGeoJson)]="trackGeoJson.value"
+    [(selectedSegment)]="selectedSegment"
+  />
   <a [routerLink]="['/details', trackId()]">
     <span class="pi pi-chart-line"></span>
     Details
