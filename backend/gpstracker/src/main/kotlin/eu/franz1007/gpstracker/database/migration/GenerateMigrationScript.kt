@@ -1,6 +1,7 @@
 package eu.franz1007.gpstracker.database.migration
 
 import eu.franz1007.gpstracker.database.GpsPointService
+import eu.franz1007.gpstracker.database.PoiService
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.v1.core.ExperimentalDatabaseMigrationApi
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -33,8 +34,8 @@ fun main() {
 fun generateMigrationScript() {
     File(MIGRATIONS_DIRECTORY).mkdirs()
     val migrationFile = MigrationUtils.generateMigrationScript(
-        GpsPointService.Tracks, GpsPointService.GpsPoints, GpsPointService.TrackGroups,
-        scriptDirectory = MIGRATIONS_DIRECTORY,
+        GpsPointService.Tracks, GpsPointService.GpsPoints, GpsPointService.TrackGroups, PoiService.Campsites,
+        PoiService.CampsiteVisits, scriptDirectory = MIGRATIONS_DIRECTORY,
         scriptName = getNextMigrationName(Path(MIGRATIONS_DIRECTORY)),
     )
 
@@ -48,8 +49,8 @@ fun generateMigrationScript() {
 fun getNextMigrationName(path: Path): String {
     val version = path.useDirectoryEntries("V*__*.sql") { sequence ->
         sequence.maxOfOrNull { it.name.removePrefix("V").substringBefore("__").substringBefore(".").toInt() }?.let {
-                it + 1
-            } ?: 1
+            it + 1
+        } ?: 1
     }
 
     return "V${version}__Migration"
