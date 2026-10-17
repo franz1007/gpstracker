@@ -1,0 +1,7 @@
+<div class="container">
+  <app-segmentmap
+    [(trackGeoJson)]="trackGeoJson.value"
+    [(selectedSegment)]="selectedSegment"
+  />
+  <button (click)="nextTrack()" class="bottom-right" pButton>Next</button>
+</div>

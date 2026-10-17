@@ -1,4 +1,3 @@
-
 import { Component } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { Menubar } from 'primeng/menubar';
@@ -7,7 +6,7 @@ import { Menubar } from 'primeng/menubar';
   selector: 'app-root',
   template: `
     <p-menubar [model]="items">
-      <ng-template  #item let-item>
+      <ng-template #item let-item>
         @if (item.route) {
           <a [routerLink]="item.route" class="p-menubar-item-link">
             <span [class]="item.icon"></span>
@@ -29,24 +28,33 @@ import { Menubar } from 'primeng/menubar';
         }
       </ng-template>
     </p-menubar>
-    <router-outlet style="heigth: 100%"/>
-    `,
+    <router-outlet style="heigth: 100%" />
+  `,
   styleUrl: './app.component.css',
   imports: [RouterOutlet, RouterLink, Menubar],
 })
 export class AppComponent {
-  constructor(private router: Router) { }
+  constructor(private router: Router) {}
   items = [
     {
       label: 'Map',
       icon: 'pi pi-home',
-      route: '/map'
+      route: '/map',
     },
     {
       label: 'Trackmanager',
       icon: 'pi pi-palette',
-      route: '/trackmanager'
-    }
-
+      route: '/trackmanager',
+    },
+    {
+      label: 'Merger',
+      icon: 'pi pi-palette',
+      route: '/merge',
+    },
+    {
+      label: 'Campsites',
+      icon: 'pi pi-shop',
+      route: '/campsites',
+    },
   ];
 }

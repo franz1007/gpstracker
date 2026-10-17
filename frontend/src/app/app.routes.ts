@@ -3,6 +3,9 @@ import { TrackerComponent } from './tracker/tracker.component';
 import { TrackmanagerComponent } from './trackmanager/trackmanager.component';
 import { TrackdetailsComponent } from './trackdetails/trackdetails.component';
 import { TrackeditorComponent } from './trackeditor/trackeditor.component';
+import { CampsitesComponent } from './campsites/campsites.component';
+import { CreatorComponent } from './campsites/creator/creator.component';
+import { MergerComponent } from './merger/merger.component';
 
 export const routes: Routes = [
   {
@@ -31,9 +34,24 @@ export const routes: Routes = [
     component: TrackdetailsComponent,
   },
   {
+    path: 'merge',
+    title: 'Merge',
+    component: MergerComponent,
+  },
+  {
     path: 'edit/:trackId',
     title: 'Trackeditor',
     component: TrackeditorComponent,
+  },
+  {
+    path: 'campsites',
+    title: 'Campsites',
+    component: CampsitesComponent,
+  },
+  {
+    path: 'campsites/new',
+    title: 'New Campsite',
+    component: CreatorComponent,
   },
   {
     path: '**',

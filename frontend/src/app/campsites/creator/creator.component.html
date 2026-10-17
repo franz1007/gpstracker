@@ -1,0 +1,14 @@
+<form [formGroup]="campsiteForm" (ngSubmit)="onSubmit()">
+  <label for="siteName">Name</label>
+  <input pInputText type="text" id="siteName" formControlName="siteName" />
+  <div>
+    <label for="siteDescription">Description</label>
+    <textarea
+      pTextarea
+      rows="3"
+      id="siteDescription"
+      formControlName="siteDescription"
+    ></textarea>
+  </div>
+  <button pButton type="submit" [disabled]="!campsiteForm.valid">Submit</button>
+</form>
