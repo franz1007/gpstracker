@@ -1,10 +1,13 @@
 import {
+  AfterViewInit,
   Component,
   effect,
+  ElementRef,
   model,
   ModelSignal,
   OnDestroy,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 
 import * as L from 'leaflet';
@@ -15,7 +18,10 @@ import { Feature, LineString, Position } from 'geojson';
   templateUrl: './segmentmap.component.html',
   styleUrl: './segmentmap.component.css',
 })
-export class SegmentmapComponent implements OnInit, OnDestroy {
+export class SegmentmapComponent implements OnDestroy, AfterViewInit {
+  @ViewChild('mapContainerElement')
+  mapContainer!: ElementRef<HTMLDivElement>;
+
   trackGeoJson: ModelSignal<Feature<LineString> | undefined> = model.required<
     Feature<LineString> | undefined
   >();
@@ -72,8 +78,8 @@ export class SegmentmapComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnInit() {
-    this.map = L.map('segment-map', {
+  ngAfterViewInit() {
+    this.map = L.map(this.mapContainer.nativeElement, {
       center: [49.45421, 11.07752], //Nuremberg
       zoom: 5,
       zoomControl: false,
